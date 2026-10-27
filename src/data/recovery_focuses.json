@@ -1,0 +1,77 @@
+{
+  "label": "Recovery focus",
+  "items": [
+    {
+      "id": "pornography",
+      "label": "Pornography"
+    },
+    {
+      "id": "masturbation",
+      "label": "Masturbation"
+    },
+    {
+      "id": "social_media",
+      "label": "Social Media"
+    },
+    {
+      "id": "short_form_video",
+      "label": "Short-form Video"
+    },
+    {
+      "id": "phone_use",
+      "label": "Phone Use"
+    },
+    {
+      "id": "gaming",
+      "label": "Gaming"
+    },
+    {
+      "id": "gambling",
+      "label": "Gambling"
+    },
+    {
+      "id": "smoking_nicotine",
+      "label": "Smoking / Nicotine"
+    },
+    {
+      "id": "alcohol",
+      "label": "Alcohol"
+    },
+    {
+      "id": "cannabis",
+      "label": "Cannabis"
+    },
+    {
+      "id": "recreational_drugs",
+      "label": "Recreational Drugs"
+    },
+    {
+      "id": "caffeine",
+      "label": "Caffeine"
+    },
+    {
+      "id": "sugar_sweets",
+      "label": "Sugar / Sweets"
+    },
+    {
+      "id": "junk_food",
+      "label": "Junk Food"
+    },
+    {
+      "id": "compulsive_shopping",
+      "label": "Compulsive Shopping"
+    },
+    {
+      "id": "binge_watching",
+      "label": "Binge Watching"
+    },
+    {
+      "id": "procrastination",
+      "label": "Procrastination"
+    },
+    {
+      "id": "nail_biting",
+      "label": "Nail Biting"
+    }
+  ]
+}
