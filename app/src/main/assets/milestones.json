@@ -1,0 +1,76 @@
+{
+  "milestones": [
+    {
+      "id": "d1",
+      "kind": "elapsed_days",
+      "value": 1,
+      "title": "1 Day"
+    },
+    {
+      "id": "d3",
+      "kind": "elapsed_days",
+      "value": 3,
+      "title": "3 Days"
+    },
+    {
+      "id": "d7",
+      "kind": "elapsed_days",
+      "value": 7,
+      "title": "7 Days"
+    },
+    {
+      "id": "d14",
+      "kind": "elapsed_days",
+      "value": 14,
+      "title": "14 Days"
+    },
+    {
+      "id": "d21",
+      "kind": "elapsed_days",
+      "value": 21,
+      "title": "21 Days"
+    },
+    {
+      "id": "d30",
+      "kind": "elapsed_days",
+      "value": 30,
+      "title": "30 Days"
+    },
+    {
+      "id": "d60",
+      "kind": "elapsed_days",
+      "value": 60,
+      "title": "60 Days"
+    },
+    {
+      "id": "d90",
+      "kind": "elapsed_days",
+      "value": 90,
+      "title": "90 Days"
+    },
+    {
+      "id": "m3",
+      "kind": "calendar_months",
+      "value": 3,
+      "title": "3 Months"
+    },
+    {
+      "id": "m6",
+      "kind": "calendar_months",
+      "value": 6,
+      "title": "6 Months"
+    },
+    {
+      "id": "m9",
+      "kind": "calendar_months",
+      "value": 9,
+      "title": "9 Months"
+    },
+    {
+      "id": "y1",
+      "kind": "calendar_years",
+      "value": 1,
+      "title": "1 Year"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "note": "Reference-only starter catalog. Do NOT bulk-copy NLT text without permission. Populate text only from licensed or user-provided source.",
+  "preferredTranslation": "NLT",
+  "themes": {
+    "temptation": [
+      "1 Corinthians 10:13",
+      "James 1:12",
+      "James 4:7",
+      "Matthew 26:41",
+      "Hebrews 2:18"
+    ],
+    "strength": [
+      "Philippians 4:13",
+      "Isaiah 40:31",
+      "Psalm 28:7",
+      "2 Corinthians 12:9",
+      "Ephesians 6:10"
+    ],
+    "love": [
+      "John 3:16",
+      "Romans 8:38-39",
+      "1 John 4:9-10",
+      "Psalm 136:1",
+      "Zephaniah 3:17"
+    ],
+    "forgiveness": [
+      "1 John 1:9",
+      "Psalm 103:12",
+      "Ephesians 1:7",
+      "Micah 7:18-19",
+      "Colossians 3:13"
+    ],
+    "self_control": [
+      "Galatians 5:22-23",
+      "2 Timothy 1:7",
+      "Proverbs 25:28",
+      "1 Peter 5:8-9",
+      "Titus 2:11-12"
+    ],
+    "peace": [
+      "John 14:27",
+      "Philippians 4:6-7",
+      "Psalm 4:8",
+      "Isaiah 26:3",
+      "Matthew 11:28-30"
+    ],
+    "perseverance": [
+      "Romans 5:3-5",
+      "Hebrews 12:1-2",
+      "Galatians 6:9",
+      "James 1:2-4",
+      "Psalm 37:23-24"
+    ],
+    "renewal": [
+      "Romans 12:2",
+      "2 Corinthians 5:17",
+      "Lamentations 3:22-23",
+      "Ezekiel 36:26",
+      "Colossians 3:9-10"
+    ]
+  }
+}
