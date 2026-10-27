@@ -50,5 +50,6 @@ data class ScaleComparison(
     val thresholdDays: Int,
     val title: String,
     val description: String,
-    val scriptureReference: String
+    val scriptureReference: String,
+    val sourceNote: String? = null
 )

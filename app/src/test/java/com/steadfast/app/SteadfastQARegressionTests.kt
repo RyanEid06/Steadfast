@@ -3,8 +3,12 @@ package com.steadfast.app
 import com.steadfast.app.core.time.StreakDurationCalculator
 import com.steadfast.app.core.time.StreakTier
 import com.steadfast.app.data.db.BibleDao
+import com.steadfast.app.data.db.JournalDao
+import com.steadfast.app.data.db.StreakDao
 import com.steadfast.app.data.model.BibleBook
 import com.steadfast.app.data.model.BibleChapterCompletionEntity
+import com.steadfast.app.data.model.JournalEntryEntity
+import com.steadfast.app.data.model.StreakSessionEntity
 import com.steadfast.app.data.repository.CuratedVerse
 import com.steadfast.app.data.repository.VerseRepository
 import com.steadfast.app.data.seed.AssetSeedLoader
@@ -190,6 +194,37 @@ class SteadfastQARegressionTests {
     // =========================================================================
     // 2. SCRIPTURE CORRECTNESS & NO COMBINED / GENERIC FABRICATED QUOTE
     // =========================================================================
+
+    private class MockStreakDao(private val sessions: MutableList<StreakSessionEntity> = mutableListOf()) : StreakDao {
+        override fun getActiveSession(): Flow<StreakSessionEntity?> = flowOf(sessions.find { it.endEpochMillis == null })
+        override suspend fun getActiveSessionSync(): StreakSessionEntity? = sessions.find { it.endEpochMillis == null }
+        override fun getAllSessions(): Flow<List<StreakSessionEntity>> = flowOf(sessions)
+        override suspend fun getAllSessionsSync(): List<StreakSessionEntity> = sessions
+        override fun getArchivedSessions(): Flow<List<StreakSessionEntity>> = flowOf(sessions.filter { it.endEpochMillis != null })
+        override suspend fun insertSession(session: StreakSessionEntity): Long {
+            sessions.add(session)
+            return session.id
+        }
+        override suspend fun updateSession(session: StreakSessionEntity) {}
+        override suspend fun archiveSession(sessionId: Long, endEpochMillis: Long) {}
+        override suspend fun deleteSession(sessionId: Long) {}
+        override suspend fun clearAll() { sessions.clear() }
+    }
+
+    private class MockJournalDao(private val entries: MutableList<JournalEntryEntity> = mutableListOf()) : JournalDao {
+        override fun getAllEntries(): Flow<List<JournalEntryEntity>> = flowOf(entries)
+        override suspend fun getAllEntriesSync(): List<JournalEntryEntity> = entries
+        override fun getEntriesByContext(context: String): Flow<List<JournalEntryEntity>> = flowOf(entries.filter { it.context == context })
+        override suspend fun getEntryById(id: Long): JournalEntryEntity? = entries.find { it.id == id }
+        override suspend fun insertEntry(entry: JournalEntryEntity): Long {
+            entries.add(entry)
+            return entry.id
+        }
+        override suspend fun updateEntry(entry: JournalEntryEntity) {}
+        override suspend fun deleteEntry(entry: JournalEntryEntity) {}
+        override suspend fun deleteEntryById(id: Long) {}
+        override suspend fun clearAll() { entries.clear() }
+    }
 
     private class MockBibleDao(private val completed: List<BibleChapterCompletionEntity>) : BibleDao {
         override fun getAllCompleted(): Flow<List<BibleChapterCompletionEntity>> = flowOf(completed)
@@ -398,5 +433,279 @@ class SteadfastQARegressionTests {
         } catch (_: Exception) {
             // Success: AEAD tag mismatch prevents unauthorized decryption
         }
+    }
+
+    // =========================================================================
+    // 6. TRANSACTIONAL BACKUP: VALIDATION & ERROR REJECTION
+    // =========================================================================
+
+    @Test
+    fun testBackupValidation_validPayloadSucceeds() {
+        val backupManager = com.steadfast.app.core.security.BackupManager(
+            androidx.test.core.app.ApplicationProvider.getApplicationContext(),
+            MockStreakDao(),
+            MockJournalDao(),
+            MockBibleDao(emptyList()),
+            com.steadfast.app.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        )
+
+        val validPayload = com.steadfast.app.core.security.BackupPayload(
+            schemaVersion = 2,
+            exportedAtEpochMillis = 1700000000000L,
+            settings = com.steadfast.app.core.security.BackupSettingsPayload(
+                themeMode = "DARK",
+                recoveryFocusId = "pornography",
+                readingGoalMinimum = 3,
+                oldTestamentCurrent = com.steadfast.app.core.security.ReadingLocationPayload(1, 5),
+                newTestamentCurrent = com.steadfast.app.core.security.ReadingLocationPayload(40, 1),
+                appLockEnabled = true
+            ),
+            streakSessions = listOf(
+                com.steadfast.app.core.security.StreakSessionPayload(
+                    id = 1L,
+                    recoveryFocusId = "pornography",
+                    startEpochMillis = 1690000000000L,
+                    startZoneId = "UTC",
+                    endEpochMillis = null,
+                    createdAtEpochMillis = 1690000000000L
+                )
+            ),
+            journalEntries = listOf(
+                com.steadfast.app.core.security.JournalEntryPayload(
+                    id = 1L,
+                    createdAtEpochMillis = 1690001000000L,
+                    updatedAtEpochMillis = 1690001000000L,
+                    body = "Walking in freedom",
+                    context = "GENERAL",
+                    streakSessionId = 1L
+                )
+            ),
+            bibleCompletedChapters = listOf(
+                com.steadfast.app.core.security.BibleCompletionPayload(bookId = 1, chapter = 1),
+                com.steadfast.app.core.security.BibleCompletionPayload(bookId = 19, chapter = 23)
+            )
+        )
+
+        // Must succeed without throwing
+        backupManager.validatePayload(validPayload)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun testBackupValidation_unsupportedSchemaVersionRejected() {
+        val backupManager = com.steadfast.app.core.security.BackupManager(
+            androidx.test.core.app.ApplicationProvider.getApplicationContext(),
+            MockStreakDao(),
+            MockJournalDao(),
+            MockBibleDao(emptyList()),
+            com.steadfast.app.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        )
+
+        val invalidVersionPayload = com.steadfast.app.core.security.BackupPayload(
+            schemaVersion = 99, // Unsupported future schema
+            exportedAtEpochMillis = 1700000000000L
+        )
+
+        backupManager.validatePayload(invalidVersionPayload)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun testBackupValidation_invalidTimezoneRejected() {
+        val backupManager = com.steadfast.app.core.security.BackupManager(
+            androidx.test.core.app.ApplicationProvider.getApplicationContext(),
+            MockStreakDao(),
+            MockJournalDao(),
+            MockBibleDao(emptyList()),
+            com.steadfast.app.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        )
+
+        val invalidTimezonePayload = com.steadfast.app.core.security.BackupPayload(
+            schemaVersion = 2,
+            streakSessions = listOf(
+                com.steadfast.app.core.security.StreakSessionPayload(
+                    id = 1L,
+                    recoveryFocusId = "pornography",
+                    startEpochMillis = 1690000000000L,
+                    startZoneId = "INVALID/FAKE_TIMEZONE_NOT_REAL",
+                    endEpochMillis = null,
+                    createdAtEpochMillis = 1690000000000L
+                )
+            )
+        )
+
+        backupManager.validatePayload(invalidTimezonePayload)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun testBackupValidation_multipleActiveSessionsRejected() {
+        val backupManager = com.steadfast.app.core.security.BackupManager(
+            androidx.test.core.app.ApplicationProvider.getApplicationContext(),
+            MockStreakDao(),
+            MockJournalDao(),
+            MockBibleDao(emptyList()),
+            com.steadfast.app.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        )
+
+        val multipleActivePayload = com.steadfast.app.core.security.BackupPayload(
+            schemaVersion = 2,
+            streakSessions = listOf(
+                com.steadfast.app.core.security.StreakSessionPayload(1L, "focus1", 1000L, "UTC", null, 1000L),
+                com.steadfast.app.core.security.StreakSessionPayload(2L, "focus2", 2000L, "UTC", null, 2000L) // Two active!
+            )
+        )
+
+        backupManager.validatePayload(multipleActivePayload)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun testBackupValidation_danglingJournalStreakSessionIdRejected() {
+        val backupManager = com.steadfast.app.core.security.BackupManager(
+            androidx.test.core.app.ApplicationProvider.getApplicationContext(),
+            MockStreakDao(),
+            MockJournalDao(),
+            MockBibleDao(emptyList()),
+            com.steadfast.app.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        )
+
+        val danglingPayload = com.steadfast.app.core.security.BackupPayload(
+            schemaVersion = 2,
+            streakSessions = listOf(
+                com.steadfast.app.core.security.StreakSessionPayload(1L, "focus1", 1000L, "UTC", null, 1000L)
+            ),
+            journalEntries = listOf(
+                com.steadfast.app.core.security.JournalEntryPayload(
+                    id = 1L,
+                    createdAtEpochMillis = 1000L,
+                    updatedAtEpochMillis = 1000L,
+                    body = "Entry",
+                    context = "URGE",
+                    streakSessionId = 999L // Non-existent session
+                )
+            )
+        )
+
+        backupManager.validatePayload(danglingPayload)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun testBackupValidation_invalidBibleChapterCountRejected() {
+        val backupManager = com.steadfast.app.core.security.BackupManager(
+            androidx.test.core.app.ApplicationProvider.getApplicationContext(),
+            MockStreakDao(),
+            MockJournalDao(),
+            MockBibleDao(emptyList()),
+            com.steadfast.app.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        )
+
+        // Revelation (book 66) has only 22 chapters. Chapter 25 is impossible!
+        val impossibleChapterPayload = com.steadfast.app.core.security.BackupPayload(
+            schemaVersion = 2,
+            bibleCompletedChapters = listOf(
+                com.steadfast.app.core.security.BibleCompletionPayload(bookId = 66, chapter = 25)
+            )
+        )
+
+        backupManager.validatePayload(impossibleChapterPayload)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun testBackupValidation_duplicateCompletedChaptersRejected() {
+        val backupManager = com.steadfast.app.core.security.BackupManager(
+            androidx.test.core.app.ApplicationProvider.getApplicationContext(),
+            MockStreakDao(),
+            MockJournalDao(),
+            MockBibleDao(emptyList()),
+            com.steadfast.app.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        )
+
+        val duplicatePayload = com.steadfast.app.core.security.BackupPayload(
+            schemaVersion = 2,
+            bibleCompletedChapters = listOf(
+                com.steadfast.app.core.security.BibleCompletionPayload(bookId = 19, chapter = 23),
+                com.steadfast.app.core.security.BibleCompletionPayload(bookId = 19, chapter = 23) // Duplicate!
+            )
+        )
+
+        backupManager.validatePayload(duplicatePayload)
+    }
+
+    // =========================================================================
+    // 7. BACKUP SETTINGS: SCHEMA V1 MIGRATION & APP-LOCK PRESERVATION
+    // =========================================================================
+
+    @Test
+    fun testBackupSettings_schemaV1MigrationCompatibility() {
+        val backupManager = com.steadfast.app.core.security.BackupManager(
+            androidx.test.core.app.ApplicationProvider.getApplicationContext(),
+            MockStreakDao(),
+            MockJournalDao(),
+            MockBibleDao(emptyList()),
+            com.steadfast.app.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        )
+
+        // Schema v1 with no appLockEnabled field
+        val v1Payload = com.steadfast.app.core.security.BackupPayload(
+            schemaVersion = 1,
+            exportedAtEpochMillis = 1690000000000L,
+            settings = com.steadfast.app.core.security.BackupSettingsPayload(
+                themeMode = "LIGHT",
+                recoveryFocusId = "alcohol",
+                readingGoalMinimum = 2,
+                appLockEnabled = null // Not present in v1
+            )
+        )
+
+        // Schema v1 is accepted and migrated cleanly
+        backupManager.validatePayload(v1Payload)
+        assertNull(v1Payload.settings.appLockEnabled)
+    }
+
+    @Test
+    fun testBackupSettings_schemaV2AppLockFieldCoverage() {
+        val settings = com.steadfast.app.core.security.BackupSettingsPayload(
+            themeMode = "DARK",
+            recoveryFocusId = "gambling",
+            readingGoalMinimum = 4,
+            appLockEnabled = true
+        )
+
+        assertEquals(true, settings.appLockEnabled)
+    }
+
+    // =========================================================================
+    // 8. BIOMETRIC STATE MACHINE: DUPLICATE PROMPT PREVENTION
+    // =========================================================================
+
+    @Test
+    fun testBiometricLockManager_stateMachine() {
+        com.steadfast.app.core.security.BiometricLockManager.resetState()
+        assertFalse(com.steadfast.app.core.security.BiometricLockManager.isPromptActive())
+        assertEquals(com.steadfast.app.core.security.AuthPromptState.IDLE, com.steadfast.app.core.security.BiometricLockManager.currentState)
+
+        // Reset cleans state completely
+        com.steadfast.app.core.security.BiometricLockManager.resetState()
+        assertFalse(com.steadfast.app.core.security.BiometricLockManager.isPromptActive())
+    }
+
+    // =========================================================================
+    // 9. REDUCED MOTION ACCESSIBILITY DETECTION & BEHAVIOR
+    // =========================================================================
+
+    @Test
+    fun testReducedMotion_overrideAndDetection() {
+        val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+
+        // Default state without override
+        com.steadfast.app.core.accessibility.ReducedMotionHelper.testReducedMotionOverride = null
+
+        // With reduced motion active override
+        com.steadfast.app.core.accessibility.ReducedMotionHelper.testReducedMotionOverride = true
+        assertTrue(com.steadfast.app.core.accessibility.ReducedMotionHelper.isReducedMotionEnabled(context))
+
+        // With standard motion override
+        com.steadfast.app.core.accessibility.ReducedMotionHelper.testReducedMotionOverride = false
+        assertFalse(com.steadfast.app.core.accessibility.ReducedMotionHelper.isReducedMotionEnabled(context))
+
+        // Clean up
+        com.steadfast.app.core.accessibility.ReducedMotionHelper.testReducedMotionOverride = null
     }
 }

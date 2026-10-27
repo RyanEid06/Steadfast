@@ -28,8 +28,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Fingerprint
@@ -145,7 +145,7 @@ fun OnboardingWizardScreen(
                         modifier = Modifier.testTag("onboarding_back_button")
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = MaterialTheme.colorScheme.onBackground
                         )
@@ -256,23 +256,28 @@ private fun StepWelcome(onNext: () -> Unit) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(130.dp)
-                    .clip(CircleShape)
-                    .border(2.dp, SteadfastGold.copy(alpha = 0.5f), CircleShape),
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .border(1.dp, SteadfastGold.copy(alpha = 0.35f), RoundedCornerShape(20.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.ic_steadfast_launcher_fg),
-                    contentDescription = "Steadfast Cross",
-                    modifier = Modifier.size(100.dp)
+                    painter = painterResource(id = R.drawable.hero_splash),
+                    contentDescription = "Steadfast Illuminated Cross",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
                 )
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
                 text = "STEADFAST",
                 style = MaterialTheme.typography.displayMedium,
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp,
                 color = SteadfastGold,
                 textAlign = TextAlign.Center
             )
@@ -327,7 +332,7 @@ private fun StepWelcome(onNext: () -> Unit) {
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Icon(Icons.Default.ArrowForward, contentDescription = null)
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
         }
     }
 }

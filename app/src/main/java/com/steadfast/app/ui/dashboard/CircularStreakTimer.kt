@@ -47,9 +47,10 @@ fun CircularStreakTimer(
     modifier: Modifier = Modifier
 ) {
     val displayUnits = StreakDurationCalculator.getDisplayUnits(duration)
+    val reducedMotion = com.steadfast.app.core.accessibility.rememberReducedMotion()
 
     val infiniteTransition = rememberInfiniteTransition(label = "ring_glow")
-    val pulseAlpha by infiniteTransition.animateFloat(
+    val animatedAlpha by infiniteTransition.animateFloat(
         initialValue = 0.7f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
@@ -58,6 +59,7 @@ fun CircularStreakTimer(
         ),
         label = "pulse_alpha"
     )
+    val pulseAlpha = if (reducedMotion) 1f else animatedAlpha
 
     Box(
         modifier = modifier

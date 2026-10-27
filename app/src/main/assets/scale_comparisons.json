@@ -4,146 +4,167 @@
     "thresholdDays": 1,
     "title": "24 Hours of Freedom",
     "description": "1,440 consecutive minutes of intentional resolve. During this time, the Earth completed one full rotation of approximately 40,075 kilometers beneath your feet.",
-    "scriptureReference": "Zechariah 4:10 — 'Do not despise these small beginnings, for the Lord rejoices to see the work begin.'"
+    "scriptureReference": "Zechariah 4:10 — 'Do not despise these small beginnings, for the Lord rejoices to see the work begin.'",
+    "sourceNote": "Planetary rotational constant: Earth equatorial circumference = 40,075.017 km (WGS 84 ellipsoid / NASA Earth Fact Sheet)."
   },
   {
     "id": "sc_2",
     "thresholdDays": 2,
     "title": "48 Hours of Endurance",
     "description": "2,880 minutes of steadfastness. You have navigated two full cycles of day and night in conscious self-mastery.",
-    "scriptureReference": "Psalm 118:24 — 'This is the day the Lord has made; we will rejoice and be glad in it.'"
+    "scriptureReference": "Psalm 118:24 — 'This is the day the Lord has made; we will rejoice and be glad in it.'",
+    "sourceNote": "Diurnal cycle arithmetic: 2 standard 24-hour mean solar days = 48 hours = 2,880 minutes."
   },
   {
     "id": "sc_3",
     "thresholdDays": 3,
     "title": "Three Days of Restoration",
     "description": "72 hours of renewal. In Scripture, three days often marks the turning point from affliction to resurrection morning.",
-    "scriptureReference": "Hosea 6:2 — 'After two days he will revive us; on the third day he will restore us, that we may live in his presence.'"
+    "scriptureReference": "Hosea 6:2 — 'After two days he will revive us; on the third day he will restore us, that we may live in his presence.'",
+    "sourceNote": "Biblical motif & duration arithmetic: Hosea 6:2 / Jonah 1:17 / Matthew 16:21. 72 continuous hours."
   },
   {
     "id": "sc_5",
     "thresholdDays": 5,
     "title": "A Standard Work Week",
     "description": "120 continuous hours. Equivalent to the total active hours in a traditional business week, all dedicated to discipline and prayer.",
-    "scriptureReference": "Proverbs 16:3 — 'Commit your work to the Lord, and your plans will be established.'"
+    "scriptureReference": "Proverbs 16:3 — 'Commit your work to the Lord, and your plans will be established.'",
+    "sourceNote": "Standard 5-day workweek span: 5 consecutive 24-hour periods = 120 hours (ISO 8601 calendar days)."
   },
   {
     "id": "sc_7",
     "thresholdDays": 7,
     "title": "One Full Sabbath Cycle",
     "description": "168 unbroken hours. God created the heavens and the earth and rested on the seventh day. You have completed your first full biblical week of freedom.",
-    "scriptureReference": "Genesis 2:3 — 'And God blessed the seventh day and declared it holy, because on it he rested from all his work.'"
+    "scriptureReference": "Genesis 2:3 — 'And God blessed the seventh day and declared it holy, because on it he rested from all his work.'",
+    "sourceNote": "Creation week cycle: Genesis 2:1-3, Exodus 20:8-11. 7 consecutive 24-hour days = 168 hours."
   },
   {
     "id": "sc_10",
     "thresholdDays": 10,
     "title": "The Ten-Day Trial of Daniel",
     "description": "240 hours. In Babylon, Daniel and his companions chose a 10-day period of disciplined devotion, emerging stronger and clearer in spirit.",
-    "scriptureReference": "Daniel 1:12-14 — 'Test your servants for ten days... and at the end of ten days their faces appeared fairer.'"
+    "scriptureReference": "Daniel 1:12-14 — 'Test your servants for ten days... and at the end of ten days their faces appeared fairer.'",
+    "sourceNote": "Danielic devotion milestone: Daniel 1:12-15. 10 elapsed days = 240 hours."
   },
   {
     "id": "sc_14",
     "thresholdDays": 14,
     "title": "A Fortnight of Perseverance",
-    "description": "336 hours. Half of a lunar cycle. Two full weeks of resisting impulse and walking with patient perseverance.",
-    "scriptureReference": "Psalm 31:24 — 'Be of good courage, and He shall strengthen your heart, all you who hope in the Lord.'"
+    "description": "336 hours. Half of a lunar synodic cycle. Two full weeks of resisting impulse and walking with patient perseverance.",
+    "scriptureReference": "Psalm 31:24 — 'Be of good courage, and He shall strengthen your heart, all you who hope in the Lord.'",
+    "sourceNote": "Lunar phase duration: Half of mean synodic lunar month (29.53 days / 2 = 14.77 days; NASA Moon Fact Sheet). 14 days = 336 hours."
   },
   {
     "id": "sc_21",
     "thresholdDays": 21,
     "title": "The Fast of Daniel",
     "description": "504 hours. Daniel dedicated three full weeks to prayer and fasting beside the Tigris River before God's messenger ministered to him.",
-    "scriptureReference": "Daniel 10:2 — 'In those days I, Daniel, was mourning three full weeks.'"
+    "scriptureReference": "Daniel 10:2 — 'In those days I, Daniel, was mourning three full weeks.'",
+    "sourceNote": "Biblical petition milestone: Daniel 10:2-3. 3 full calendar weeks = 21 elapsed days = 504 hours."
   },
   {
     "id": "sc_30",
     "thresholdDays": 30,
     "title": "One Full Lunar Month",
     "description": "720 hours — 43,200 minutes. The moon has completed its full orbital cycle from new moon to crescent, full illumination, and back.",
-    "scriptureReference": "Lamentations 3:22-23 — 'The faithful love of the Lord never ends! His mercies never cease. Great is his faithfulness; his mercies begin afresh each morning.'"
+    "scriptureReference": "Lamentations 3:22-23 — 'The faithful love of the Lord never ends! His mercies never cease. Great is his faithfulness; his mercies begin afresh each morning.'",
+    "sourceNote": "Astronomical synodic month: Mean lunar phase cycle = 29.53059 days (NASA Goddard Moon Fact Sheet)."
   },
   {
     "id": "sc_40",
     "thresholdDays": 40,
     "title": "The Biblical Forty Days",
     "description": "960 hours. Forty days is Scripture's recurring milestone for testing and spiritual maturity: Jesus in the wilderness, Moses on Sinai, and Elijah journeying to Horeb.",
-    "scriptureReference": "Matthew 4:1-2 — 'Then Jesus was led by the Spirit into the wilderness... After fasting forty days and forty nights, he was hungry.'"
+    "scriptureReference": "Matthew 4:1-2 — 'Then Jesus was led by the Spirit into the wilderness... After fasting forty days and forty nights, he was hungry.'",
+    "sourceNote": "Scripture purification & testing motif: Exodus 34:28, 1 Kings 19:8, Matthew 4:1-2. 40 days = 960 hours."
   },
   {
     "id": "sc_50",
     "thresholdDays": 50,
     "title": "The Pentecost Interval",
     "description": "1,200 hours. The exact span from Passover to the Feast of Weeks (Pentecost), commemorating God giving the Law and the outpouring of the Holy Spirit.",
-    "scriptureReference": "Acts 2:1 — 'When the day of Pentecost had fully come, they were all together in one place.'"
+    "scriptureReference": "Acts 2:1 — 'When the day of Pentecost had fully come, they were all together in one place.'",
+    "sourceNote": "Levitical & New Testament calendar interval: 50 days (Leviticus 23:15-16, Acts 2:1). 1,200 hours."
   },
   {
     "id": "sc_60",
     "thresholdDays": 60,
     "title": "Two Full Months",
     "description": "1,440 hours — 86,400 minutes won back. Your daily routine has steadily shifted toward prayer, Scripture, and peace.",
-    "scriptureReference": "Jeremiah 17:8 — 'They are like trees planted along a riverbank, with roots that reach deep into the water.'"
+    "scriptureReference": "Jeremiah 17:8 — 'They are like trees planted along a riverbank, with roots that reach deep into the water.'",
+    "sourceNote": "Calendar duration arithmetic: 60 standard days = 1,440 hours = 86,400 minutes."
   },
   {
     "id": "sc_75",
     "thresholdDays": 75,
-    "title": "The Atlantic Crossing",
-    "description": "1,800 hours. In 1620, the Mayflower took 66 days to cross the North Atlantic. You have surpassed the full duration of early ocean voyage crossings through quiet perseverance.",
-    "scriptureReference": "Psalm 107:29-30 — 'He calmed the storm to a whisper... and he brought them to their desired haven.'"
+    "title": "Surpassing Historic Voyages",
+    "description": "1,800 hours. In 1620, the historic Mayflower voyage across the stormy North Atlantic took 66 days. You have surpassed that entire transatlantic voyage in quiet perseverance.",
+    "scriptureReference": "Psalm 107:29-30 — 'He calmed the storm to a whisper... and he brought them to their desired haven.'",
+    "sourceNote": "Historical maritime voyage: Mayflower Atlantic crossing (Sept 6 – Nov 9, 1620 O.S., 66 days; William Bradford, 'Of Plymouth Plantation'). 75 days = 1,800 hours."
   },
   {
     "id": "sc_90",
     "thresholdDays": 90,
     "title": "A Complete Astronomical Season",
     "description": "2,160 hours — 129,600 minutes. One quarter of the calendar year. The earth has traversed 90 degrees around its orbit, transforming the season.",
-    "scriptureReference": "Ecclesiastes 3:1 — 'For everything there is a season, a time for every activity under heaven.'"
+    "scriptureReference": "Ecclesiastes 3:1 — 'For everything there is a season, a time for every activity under heaven.'",
+    "sourceNote": "Astronomical orbital quadrant: Mean season duration is 89-93 days; ~90 degrees orbital transit (US Naval Observatory Astronomical Almanac)."
   },
   {
     "id": "sc_120",
     "thresholdDays": 120,
     "title": "One Third of a Year",
     "description": "2,880 hours — four complete calendar months. Over 170,000 minutes of daily intentional surrender.",
-    "scriptureReference": "Colossians 2:6-7 — 'Just as you accepted Christ Jesus as your Lord, you must continue to follow him. Let your roots grow down into him.'"
+    "scriptureReference": "Colossians 2:6-7 — 'Just as you accepted Christ Jesus as your Lord, you must continue to follow him. Let your roots grow down into him.'",
+    "sourceNote": "Solar year division: 120 days = 2,880 hours = 172,800 minutes (1/3 of 360-365 day cycle)."
   },
   {
     "id": "sc_150",
     "thresholdDays": 150,
     "title": "Waters of the Ark Receding",
     "description": "3,600 hours. In Genesis, the flood waters prevailed upon the earth for 150 days before the ark came to rest on the mountains of Ararat and a new chapter began.",
-    "scriptureReference": "Genesis 8:3 — 'The water receded steadily from the earth. At the end of the hundred and fifty days the water had gone down.'"
+    "scriptureReference": "Genesis 8:3 — 'The water receded steadily from the earth. At the end of the hundred and fifty days the water had gone down.'",
+    "sourceNote": "Genesis chronicle milestone: Genesis 7:24, 8:3. 150 days = 3,600 hours."
   },
   {
     "id": "sc_180",
     "thresholdDays": 180,
     "title": "Half a Year of Grace",
     "description": "4,320 hours — 259,200 minutes. Six full months. Half the globe's annual cycle completed in freedom.",
-    "scriptureReference": "2 Corinthians 5:17 — 'This means that anyone who belongs to Christ has become a new person. The old life is gone; a new life has begun!'"
+    "scriptureReference": "2 Corinthians 5:17 — 'This means that anyone who belongs to Christ has become a new person. The old life is gone; a new life has begun!'",
+    "sourceNote": "Calendar orbital geometry: 180 days = 180 degrees orbital transit around the Sun = 4,320 hours."
   },
   {
     "id": "sc_270",
     "thresholdDays": 270,
     "title": "The Span of New Life",
     "description": "6,480 hours — nine months. Equivalent to the full human gestation period, where life is quietly formed in secret by God's hand.",
-    "scriptureReference": "Psalm 139:13 — 'You made all the delicate, inner parts of my body and knit me together in my mother’s womb.'"
+    "scriptureReference": "Psalm 139:13 — 'You made all the delicate, inner parts of my body and knit me together in my mother’s womb.'",
+    "sourceNote": "Human biological gestation: Average term pregnancy duration is 38-40 weeks = 266-280 days (American College of Obstetricians and Gynecologists / ACOG clinical guidelines)."
   },
   {
     "id": "sc_365",
     "thresholdDays": 365,
     "title": "One Full Solar Orbit",
     "description": "8,760 hours — 525,600 minutes. The earth has traveled approximately 940 million kilometers around the Sun. An entire year lived in steadfast victory.",
-    "scriptureReference": "Psalm 65:11 — 'You crown the year with your goodness, and your paths overflow with abundance.'"
+    "scriptureReference": "Psalm 65:11 — 'You crown the year with your goodness, and your paths overflow with abundance.'",
+    "sourceNote": "Earth orbital trajectory: 1 tropical year = 365.2422 days; orbital circumference = 940 million km (NASA Earth Fact Sheet)."
   },
   {
     "id": "sc_500",
     "thresholdDays": 500,
     "title": "Five Hundred Days",
     "description": "12,000 hours — 720,000 minutes. A rare landmark of mature spiritual discipline and enduring character.",
-    "scriptureReference": "Galatians 6:9 — 'Let us not become weary in doing good, for at the proper time we will reap a harvest if we do not give up.'"
+    "scriptureReference": "Galatians 6:9 — 'Let us not become weary in doing good, for at the proper time we will reap a harvest if we do not give up.'",
+    "sourceNote": "Milestone duration arithmetic: 500 standard 24-hour days = 12,000 hours = 720,000 minutes."
   },
   {
     "id": "sc_730",
     "thresholdDays": 730,
     "title": "Two Full Calendar Years",
     "description": "17,520 hours — over one million minutes of sustained clarity and God-given freedom.",
-    "scriptureReference": "2 Timothy 4:7 — 'I have fought the good fight, I have finished the race, I have kept the faith.'"
+    "scriptureReference": "2 Timothy 4:7 — 'I have fought the good fight, I have finished the race, I have kept the faith.'",
+    "sourceNote": "Biennial duration arithmetic: 2 standard 365-day solar calendar years = 730 days = 17,520 hours."
   }
 ]

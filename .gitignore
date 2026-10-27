@@ -18,4 +18,6 @@ build/
 local.properties
 .env
 debug.keystore
-
+debug.keystore.base64
+.aistudio/
+.build-outputs/

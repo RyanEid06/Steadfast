@@ -19,11 +19,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -209,6 +209,11 @@ class MainActivity : FragmentActivity() {
             onError = { /* Keep locked */ }
         )
     }
+
+    override fun onDestroy() {
+        BiometricLockManager.resetState()
+        super.onDestroy()
+    }
 }
 
 @Composable
@@ -374,7 +379,7 @@ fun MainAppContent(
                                 Icon(
                                     imageVector = when (dest) {
                                         BottomBarDestination.DASHBOARD -> Icons.Default.Home
-                                        BottomBarDestination.JOURNEY -> Icons.Default.TrendingUp
+                                        BottomBarDestination.JOURNEY -> Icons.AutoMirrored.Filled.TrendingUp
                                         BottomBarDestination.BIBLE -> Icons.Default.AutoStories
                                     },
                                     contentDescription = dest.title

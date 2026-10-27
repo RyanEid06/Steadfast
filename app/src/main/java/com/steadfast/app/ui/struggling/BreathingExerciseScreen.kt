@@ -68,6 +68,7 @@ fun BreathingExerciseScreen(
     val currentPhase = phases[phaseIndex]
 
     var targetScale by remember { mutableStateOf(0.7f) }
+    val reducedMotion = com.steadfast.app.core.accessibility.rememberReducedMotion()
 
     LaunchedEffect(Unit) {
         while (isActive) {
@@ -86,6 +87,7 @@ fun BreathingExerciseScreen(
         animationSpec = tween(durationMillis = 4000, easing = LinearEasing),
         label = "breath_scale"
     )
+    val effectiveScale = if (reducedMotion) 1.0f else animatedScale
 
     Box(
         modifier = modifier
@@ -136,7 +138,7 @@ fun BreathingExerciseScreen(
                 Box(
                     modifier = Modifier
                         .size(240.dp)
-                        .scale(animatedScale)
+                        .scale(effectiveScale)
                         .clip(CircleShape)
                         .background(
                             Brush.radialGradient(

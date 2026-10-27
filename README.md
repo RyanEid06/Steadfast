@@ -33,7 +33,7 @@ Steadfast is a private, offline Christian recovery and daily Scripture progress 
 2. **Emergency Grace Sanctuary ("I'm Struggling")**
    - Rapid-relief modal offering calm grounding without shame.
    - Prioritizes Scripture passages from chapters the user has already marked completed, using verified anti-repeat cycling.
-   - Calming 4-4-4-4 Box Breathing exercise with real-time visual pacing and haptic guidance.
+   - Calming 4-4-4-4 Box Breathing exercise with real-time visual pacing.
    - "Write Note" shortcut that immediately opens the Journal composer with the `URGE` context tag preselected.
 
 3. **Canonical Protestant Bible Progress**

@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -173,37 +174,38 @@ fun DashboardScreen(
                 }
             }
 
-            // 2. Restrained Cross / Horizon Hero Atmosphere
+            // 2. Restrained Cross / Horizon Hero Atmosphere with Theme-Specific Artwork
+            val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
+            val heroDrawableRes = if (isDarkTheme) R.drawable.hero_dashboard_dark else R.drawable.hero_dashboard_light
+            val heroOverlayGradient = if (isDarkTheme) {
+                listOf(Color(0xFF1B2334).copy(alpha = 0.4f), Color.Transparent)
+            } else {
+                listOf(Color(0xFFE8DFCA).copy(alpha = 0.5f), Color.Transparent)
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(95.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                Color(0xFF1B2334).copy(alpha = 0.4f),
-                                Color.Transparent
-                            )
-                        )
-                    ),
+                    .background(Brush.verticalGradient(heroOverlayGradient)),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.hero_dashboard_dark),
+                    painter = painterResource(id = heroDrawableRes),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxSize()
                         .clip(RoundedCornerShape(16.dp)),
-                    alpha = 0.35f
+                    alpha = if (isDarkTheme) 0.35f else 0.65f
                 )
                 Text(
                     text = "“Stand firm, and you will win life.”",
                     style = MaterialTheme.typography.bodySmall,
                     fontFamily = FontFamily.Serif,
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )

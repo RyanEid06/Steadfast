@@ -24,7 +24,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
@@ -101,7 +101,7 @@ fun BookDetailScreen(
                 modifier = Modifier.testTag("book_detail_back_button")
             ) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
                     tint = MaterialTheme.colorScheme.onBackground
                 )
@@ -220,6 +220,60 @@ fun BookDetailScreen(
                     isCurrentReading = isCurrentReadingLocation,
                     onClick = { onToggleChapter(chapterNumber) },
                     onLongClick = { chapterActionDialogChapter = chapterNumber }
+                )
+            }
+        }
+
+        // Style 3 Legend: Completed vs Not read vs Reading Bookmark
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(SteadfastGold)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = "Completed",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.width(20.dp))
+
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), RoundedCornerShape(3.dp))
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = "Not read",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            if (currentChapter != null) {
+                Spacer(modifier = Modifier.width(20.dp))
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(Color.White)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Reading",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SteadfastGold
                 )
             }
         }
