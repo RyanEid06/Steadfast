@@ -1,0 +1,8 @@
+{
+  "project": "Steadfast Android",
+  "specVersion": "1.1-hybrid-design-frozen",
+  "generated": "2026-10-27",
+  "implementationStatus": "spec-and-design only; coding intentionally not started",
+  "primaryDesign": "docs/DESIGN_FREEZE.md",
+  "designReferences": "design/mockups/canonical/"
+}

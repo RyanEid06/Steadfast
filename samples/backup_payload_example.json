@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "exportedAtEpochMillis": 1793116800000,
+  "appVersion": "1.0.0",
+  "settings": {
+    "themeMode": "DARK",
+    "recoveryFocusId": "pornography",
+    "readingGoalMinimum": 2,
+    "oldTestamentCurrent": {
+      "bookId": 19,
+      "chapter": 23
+    },
+    "newTestamentCurrent": {
+      "bookId": 43,
+      "chapter": 8
+    }
+  },
+  "streakSessions": [],
+  "journalEntries": [],
+  "bibleCompletedChapters": []
+}

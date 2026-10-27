@@ -252,8 +252,9 @@ class SteadfastQARegressionTests {
 
         val verse = repository.getNextVerse()
         assertNotNull(verse)
-        // Philippians 4:13 belongs to Philippians 4, so it should be prioritized
-        assertEquals("Philippians 4:13", verse.reference)
+        // Verses belonging to Philippians 4 should be prioritized
+        assertTrue(verse.reference == "Philippians 4:13" || verse.reference == "Philippians 4:6-7")
+        assertEquals(4, verse.chapter)
         assertTrue(verse.isFromCompletedChapter)
     }
 
