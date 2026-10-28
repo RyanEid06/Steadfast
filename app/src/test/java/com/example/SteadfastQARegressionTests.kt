@@ -1,17 +1,17 @@
-package com.steadfast.app
+package com.example
 
-import com.steadfast.app.core.time.StreakDurationCalculator
-import com.steadfast.app.core.time.StreakTier
-import com.steadfast.app.data.db.BibleDao
-import com.steadfast.app.data.db.JournalDao
-import com.steadfast.app.data.db.StreakDao
-import com.steadfast.app.data.model.BibleBook
-import com.steadfast.app.data.model.BibleChapterCompletionEntity
-import com.steadfast.app.data.model.JournalEntryEntity
-import com.steadfast.app.data.model.StreakSessionEntity
-import com.steadfast.app.data.repository.CuratedVerse
-import com.steadfast.app.data.repository.VerseRepository
-import com.steadfast.app.data.seed.AssetSeedLoader
+import com.example.core.time.StreakDurationCalculator
+import com.example.core.time.StreakTier
+import com.example.data.db.BibleDao
+import com.example.data.db.JournalDao
+import com.example.data.db.StreakDao
+import com.example.data.model.BibleBook
+import com.example.data.model.BibleChapterCompletionEntity
+import com.example.data.model.JournalEntryEntity
+import com.example.data.model.StreakSessionEntity
+import com.example.data.repository.CuratedVerse
+import com.example.data.repository.VerseRepository
+import com.example.data.seed.AssetSeedLoader
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -441,27 +441,27 @@ class SteadfastQARegressionTests {
 
     @Test
     fun testBackupValidation_validPayloadSucceeds() {
-        val backupManager = com.steadfast.app.core.security.BackupManager(
+        val backupManager = com.example.core.security.BackupManager(
             androidx.test.core.app.ApplicationProvider.getApplicationContext(),
             MockStreakDao(),
             MockJournalDao(),
             MockBibleDao(emptyList()),
-            com.steadfast.app.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+            com.example.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
         )
 
-        val validPayload = com.steadfast.app.core.security.BackupPayload(
+        val validPayload = com.example.core.security.BackupPayload(
             schemaVersion = 2,
             exportedAtEpochMillis = 1700000000000L,
-            settings = com.steadfast.app.core.security.BackupSettingsPayload(
+            settings = com.example.core.security.BackupSettingsPayload(
                 themeMode = "DARK",
                 recoveryFocusId = "pornography",
                 readingGoalMinimum = 3,
-                oldTestamentCurrent = com.steadfast.app.core.security.ReadingLocationPayload(1, 5),
-                newTestamentCurrent = com.steadfast.app.core.security.ReadingLocationPayload(40, 1),
+                oldTestamentCurrent = com.example.core.security.ReadingLocationPayload(1, 5),
+                newTestamentCurrent = com.example.core.security.ReadingLocationPayload(40, 1),
                 appLockEnabled = true
             ),
             streakSessions = listOf(
-                com.steadfast.app.core.security.StreakSessionPayload(
+                com.example.core.security.StreakSessionPayload(
                     id = 1L,
                     recoveryFocusId = "pornography",
                     startEpochMillis = 1690000000000L,
@@ -471,7 +471,7 @@ class SteadfastQARegressionTests {
                 )
             ),
             journalEntries = listOf(
-                com.steadfast.app.core.security.JournalEntryPayload(
+                com.example.core.security.JournalEntryPayload(
                     id = 1L,
                     createdAtEpochMillis = 1690001000000L,
                     updatedAtEpochMillis = 1690001000000L,
@@ -481,8 +481,8 @@ class SteadfastQARegressionTests {
                 )
             ),
             bibleCompletedChapters = listOf(
-                com.steadfast.app.core.security.BibleCompletionPayload(bookId = 1, chapter = 1),
-                com.steadfast.app.core.security.BibleCompletionPayload(bookId = 19, chapter = 23)
+                com.example.core.security.BibleCompletionPayload(bookId = 1, chapter = 1),
+                com.example.core.security.BibleCompletionPayload(bookId = 19, chapter = 23)
             )
         )
 
@@ -492,15 +492,15 @@ class SteadfastQARegressionTests {
 
     @Test(expected = IllegalArgumentException::class)
     fun testBackupValidation_unsupportedSchemaVersionRejected() {
-        val backupManager = com.steadfast.app.core.security.BackupManager(
+        val backupManager = com.example.core.security.BackupManager(
             androidx.test.core.app.ApplicationProvider.getApplicationContext(),
             MockStreakDao(),
             MockJournalDao(),
             MockBibleDao(emptyList()),
-            com.steadfast.app.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+            com.example.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
         )
 
-        val invalidVersionPayload = com.steadfast.app.core.security.BackupPayload(
+        val invalidVersionPayload = com.example.core.security.BackupPayload(
             schemaVersion = 99, // Unsupported future schema
             exportedAtEpochMillis = 1700000000000L
         )
@@ -510,18 +510,18 @@ class SteadfastQARegressionTests {
 
     @Test(expected = IllegalArgumentException::class)
     fun testBackupValidation_invalidTimezoneRejected() {
-        val backupManager = com.steadfast.app.core.security.BackupManager(
+        val backupManager = com.example.core.security.BackupManager(
             androidx.test.core.app.ApplicationProvider.getApplicationContext(),
             MockStreakDao(),
             MockJournalDao(),
             MockBibleDao(emptyList()),
-            com.steadfast.app.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+            com.example.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
         )
 
-        val invalidTimezonePayload = com.steadfast.app.core.security.BackupPayload(
+        val invalidTimezonePayload = com.example.core.security.BackupPayload(
             schemaVersion = 2,
             streakSessions = listOf(
-                com.steadfast.app.core.security.StreakSessionPayload(
+                com.example.core.security.StreakSessionPayload(
                     id = 1L,
                     recoveryFocusId = "pornography",
                     startEpochMillis = 1690000000000L,
@@ -537,19 +537,19 @@ class SteadfastQARegressionTests {
 
     @Test(expected = IllegalArgumentException::class)
     fun testBackupValidation_multipleActiveSessionsRejected() {
-        val backupManager = com.steadfast.app.core.security.BackupManager(
+        val backupManager = com.example.core.security.BackupManager(
             androidx.test.core.app.ApplicationProvider.getApplicationContext(),
             MockStreakDao(),
             MockJournalDao(),
             MockBibleDao(emptyList()),
-            com.steadfast.app.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+            com.example.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
         )
 
-        val multipleActivePayload = com.steadfast.app.core.security.BackupPayload(
+        val multipleActivePayload = com.example.core.security.BackupPayload(
             schemaVersion = 2,
             streakSessions = listOf(
-                com.steadfast.app.core.security.StreakSessionPayload(1L, "focus1", 1000L, "UTC", null, 1000L),
-                com.steadfast.app.core.security.StreakSessionPayload(2L, "focus2", 2000L, "UTC", null, 2000L) // Two active!
+                com.example.core.security.StreakSessionPayload(1L, "focus1", 1000L, "UTC", null, 1000L),
+                com.example.core.security.StreakSessionPayload(2L, "focus2", 2000L, "UTC", null, 2000L) // Two active!
             )
         )
 
@@ -558,21 +558,21 @@ class SteadfastQARegressionTests {
 
     @Test(expected = IllegalArgumentException::class)
     fun testBackupValidation_danglingJournalStreakSessionIdRejected() {
-        val backupManager = com.steadfast.app.core.security.BackupManager(
+        val backupManager = com.example.core.security.BackupManager(
             androidx.test.core.app.ApplicationProvider.getApplicationContext(),
             MockStreakDao(),
             MockJournalDao(),
             MockBibleDao(emptyList()),
-            com.steadfast.app.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+            com.example.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
         )
 
-        val danglingPayload = com.steadfast.app.core.security.BackupPayload(
+        val danglingPayload = com.example.core.security.BackupPayload(
             schemaVersion = 2,
             streakSessions = listOf(
-                com.steadfast.app.core.security.StreakSessionPayload(1L, "focus1", 1000L, "UTC", null, 1000L)
+                com.example.core.security.StreakSessionPayload(1L, "focus1", 1000L, "UTC", null, 1000L)
             ),
             journalEntries = listOf(
-                com.steadfast.app.core.security.JournalEntryPayload(
+                com.example.core.security.JournalEntryPayload(
                     id = 1L,
                     createdAtEpochMillis = 1000L,
                     updatedAtEpochMillis = 1000L,
@@ -588,19 +588,19 @@ class SteadfastQARegressionTests {
 
     @Test(expected = IllegalArgumentException::class)
     fun testBackupValidation_invalidBibleChapterCountRejected() {
-        val backupManager = com.steadfast.app.core.security.BackupManager(
+        val backupManager = com.example.core.security.BackupManager(
             androidx.test.core.app.ApplicationProvider.getApplicationContext(),
             MockStreakDao(),
             MockJournalDao(),
             MockBibleDao(emptyList()),
-            com.steadfast.app.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+            com.example.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
         )
 
         // Revelation (book 66) has only 22 chapters. Chapter 25 is impossible!
-        val impossibleChapterPayload = com.steadfast.app.core.security.BackupPayload(
+        val impossibleChapterPayload = com.example.core.security.BackupPayload(
             schemaVersion = 2,
             bibleCompletedChapters = listOf(
-                com.steadfast.app.core.security.BibleCompletionPayload(bookId = 66, chapter = 25)
+                com.example.core.security.BibleCompletionPayload(bookId = 66, chapter = 25)
             )
         )
 
@@ -609,19 +609,19 @@ class SteadfastQARegressionTests {
 
     @Test(expected = IllegalArgumentException::class)
     fun testBackupValidation_duplicateCompletedChaptersRejected() {
-        val backupManager = com.steadfast.app.core.security.BackupManager(
+        val backupManager = com.example.core.security.BackupManager(
             androidx.test.core.app.ApplicationProvider.getApplicationContext(),
             MockStreakDao(),
             MockJournalDao(),
             MockBibleDao(emptyList()),
-            com.steadfast.app.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+            com.example.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
         )
 
-        val duplicatePayload = com.steadfast.app.core.security.BackupPayload(
+        val duplicatePayload = com.example.core.security.BackupPayload(
             schemaVersion = 2,
             bibleCompletedChapters = listOf(
-                com.steadfast.app.core.security.BibleCompletionPayload(bookId = 19, chapter = 23),
-                com.steadfast.app.core.security.BibleCompletionPayload(bookId = 19, chapter = 23) // Duplicate!
+                com.example.core.security.BibleCompletionPayload(bookId = 19, chapter = 23),
+                com.example.core.security.BibleCompletionPayload(bookId = 19, chapter = 23) // Duplicate!
             )
         )
 
@@ -634,19 +634,19 @@ class SteadfastQARegressionTests {
 
     @Test
     fun testBackupSettings_schemaV1MigrationCompatibility() {
-        val backupManager = com.steadfast.app.core.security.BackupManager(
+        val backupManager = com.example.core.security.BackupManager(
             androidx.test.core.app.ApplicationProvider.getApplicationContext(),
             MockStreakDao(),
             MockJournalDao(),
             MockBibleDao(emptyList()),
-            com.steadfast.app.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+            com.example.data.datastore.SteadfastPreferences(androidx.test.core.app.ApplicationProvider.getApplicationContext())
         )
 
         // Schema v1 with no appLockEnabled field
-        val v1Payload = com.steadfast.app.core.security.BackupPayload(
+        val v1Payload = com.example.core.security.BackupPayload(
             schemaVersion = 1,
             exportedAtEpochMillis = 1690000000000L,
-            settings = com.steadfast.app.core.security.BackupSettingsPayload(
+            settings = com.example.core.security.BackupSettingsPayload(
                 themeMode = "LIGHT",
                 recoveryFocusId = "alcohol",
                 readingGoalMinimum = 2,
@@ -661,7 +661,7 @@ class SteadfastQARegressionTests {
 
     @Test
     fun testBackupSettings_schemaV2AppLockFieldCoverage() {
-        val settings = com.steadfast.app.core.security.BackupSettingsPayload(
+        val settings = com.example.core.security.BackupSettingsPayload(
             themeMode = "DARK",
             recoveryFocusId = "gambling",
             readingGoalMinimum = 4,
@@ -677,13 +677,13 @@ class SteadfastQARegressionTests {
 
     @Test
     fun testBiometricLockManager_stateMachine() {
-        com.steadfast.app.core.security.BiometricLockManager.resetState()
-        assertFalse(com.steadfast.app.core.security.BiometricLockManager.isPromptActive())
-        assertEquals(com.steadfast.app.core.security.AuthPromptState.IDLE, com.steadfast.app.core.security.BiometricLockManager.currentState)
+        com.example.core.security.BiometricLockManager.resetState()
+        assertFalse(com.example.core.security.BiometricLockManager.isPromptActive())
+        assertEquals(com.example.core.security.AuthPromptState.IDLE, com.example.core.security.BiometricLockManager.currentState)
 
         // Reset cleans state completely
-        com.steadfast.app.core.security.BiometricLockManager.resetState()
-        assertFalse(com.steadfast.app.core.security.BiometricLockManager.isPromptActive())
+        com.example.core.security.BiometricLockManager.resetState()
+        assertFalse(com.example.core.security.BiometricLockManager.isPromptActive())
     }
 
     // =========================================================================
@@ -695,17 +695,17 @@ class SteadfastQARegressionTests {
         val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
 
         // Default state without override
-        com.steadfast.app.core.accessibility.ReducedMotionHelper.testReducedMotionOverride = null
+        com.example.core.accessibility.ReducedMotionHelper.testReducedMotionOverride = null
 
         // With reduced motion active override
-        com.steadfast.app.core.accessibility.ReducedMotionHelper.testReducedMotionOverride = true
-        assertTrue(com.steadfast.app.core.accessibility.ReducedMotionHelper.isReducedMotionEnabled(context))
+        com.example.core.accessibility.ReducedMotionHelper.testReducedMotionOverride = true
+        assertTrue(com.example.core.accessibility.ReducedMotionHelper.isReducedMotionEnabled(context))
 
         // With standard motion override
-        com.steadfast.app.core.accessibility.ReducedMotionHelper.testReducedMotionOverride = false
-        assertFalse(com.steadfast.app.core.accessibility.ReducedMotionHelper.isReducedMotionEnabled(context))
+        com.example.core.accessibility.ReducedMotionHelper.testReducedMotionOverride = false
+        assertFalse(com.example.core.accessibility.ReducedMotionHelper.isReducedMotionEnabled(context))
 
         // Clean up
-        com.steadfast.app.core.accessibility.ReducedMotionHelper.testReducedMotionOverride = null
+        com.example.core.accessibility.ReducedMotionHelper.testReducedMotionOverride = null
     }
 }

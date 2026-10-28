@@ -70,7 +70,7 @@ data class BibleCompletionPayload(
 
 @JsonClass(generateAdapter = true)
 data class BackupPayload(
-    val schemaVersion: Int = 1,
+    val schemaVersion: Int = 2,
     val exportedAtEpochMillis: Long = System.currentTimeMillis(),
     val appVersion: String = "1.0.0",
     val settings: BackupSettingsPayload = BackupSettingsPayload(),
@@ -100,6 +100,14 @@ class BackupManager(
         const val TAG_BIT_LENGTH = 128
         const val KEY_BIT_LENGTH = 256
         const val MIN_PASSPHRASE_LENGTH = 6
+
+        val BOOK_CHAPTER_COUNTS: IntArray = intArrayOf(
+            0,
+            50, 40, 27, 36, 34, 24, 21, 4, 31, 24, 22, 25, 29, 36, 10, 13, 10, 42, 150, 31,
+            12, 8, 66, 52, 5, 48, 12, 14, 3, 9, 1, 4, 7, 3, 3, 3, 2, 14, 4,
+            28, 16, 24, 21, 28, 16, 16, 13, 6, 6, 4, 4, 5, 3, 6, 4, 3, 1, 13, 5,
+            5, 3, 5, 1, 1, 1, 22
+        )
     }
 
     suspend fun exportBackup(outputStream: OutputStream?, passphrase: String) {
@@ -231,9 +239,11 @@ class BackupManager(
             val payload = adapter.fromJson(json) ?: return Result.failure(IllegalStateException("Malformed backup payload JSON"))
 
             // Validate payload
-            validatePayload(payload).onFailure { return Result.failure(it) }
+            validatePayload(payload)
 
             Result.success(payload)
+        } catch (e: IllegalArgumentException) {
+            Result.failure(e)
         } catch (e: Exception) {
             Result.failure(IllegalArgumentException("Decryption failed. Please check your passphrase."))
         }
@@ -251,112 +261,134 @@ class BackupManager(
      * Transactional replace-restore with in-memory rollback. Never writes plaintext files to disk.
      */
     suspend fun restorePayloadWithRollback(payload: BackupPayload): Result<Unit> {
-        // Take in-memory snapshots of existing live data
-        val oldSessions = streakDao.getAllSessionsSync()
-        val oldEntries = journalDao.getAllEntriesSync()
-        val oldCompletions = bibleDao.getAllCompletedSync()
-        val oldTheme = preferences.themeSetting.firstOrNull() ?: ThemeSetting.SYSTEM
-        val oldFocus = preferences.recoveryFocusId.firstOrNull() ?: "pornography"
-        val oldGoal = preferences.readingGoalMinimum.firstOrNull() ?: 2
-        val oldOt = preferences.otCurrentReading.firstOrNull()
-        val oldNt = preferences.ntCurrentReading.firstOrNull()
-        val oldLock = preferences.isAppLockEnabled.firstOrNull() ?: false
-        val oldMilestones = preferences.shownMilestones.firstOrNull()?.joinToString(",")
-
         return try {
-            // 1. Restore streak sessions
-            val newSessions = payload.streakSessions.map {
-                StreakSessionEntity(
-                    id = it.id,
-                    recoveryFocusId = it.recoveryFocusId,
-                    startEpochMillis = it.startEpochMillis,
-                    startZoneId = it.startZoneId,
-                    endEpochMillis = it.endEpochMillis,
-                    createdAtEpochMillis = it.createdAtEpochMillis
-                )
-            }
-            streakDao.replaceAll(newSessions)
+            validatePayload(payload)
 
-            // 2. Restore journal entries
-            val newEntries = payload.journalEntries.map {
-                JournalEntryEntity(
-                    id = it.id,
-                    createdAtEpochMillis = it.createdAtEpochMillis,
-                    updatedAtEpochMillis = it.updatedAtEpochMillis,
-                    body = it.body,
-                    context = it.context,
-                    streakSessionId = it.streakSessionId
-                )
-            }
-            journalDao.replaceAll(newEntries)
+            // Take in-memory snapshots of existing live data
+            val oldSessions = streakDao.getAllSessionsSync()
+            val oldEntries = journalDao.getAllEntriesSync()
+            val oldCompletions = bibleDao.getAllCompletedSync()
+            val oldTheme = preferences.themeSetting.firstOrNull() ?: ThemeSetting.SYSTEM
+            val oldFocus = preferences.recoveryFocusId.firstOrNull() ?: "pornography"
+            val oldGoal = preferences.readingGoalMinimum.firstOrNull() ?: 2
+            val oldOt = preferences.otCurrentReading.firstOrNull()
+            val oldNt = preferences.ntCurrentReading.firstOrNull()
+            val oldLock = preferences.isAppLockEnabled.firstOrNull() ?: false
+            val oldMilestones = preferences.shownMilestones.firstOrNull()?.joinToString(",")
 
-            // 3. Restore Bible completions
-            val newCompletions = payload.bibleCompletedChapters.map {
-                BibleChapterCompletionEntity(it.bookId, it.chapter)
-            }
-            bibleDao.replaceAll(newCompletions)
-
-            // 4. Restore preferences
-            payload.settings.themeMode?.let {
-                val theme = when (it) {
-                    "DARK" -> ThemeSetting.DARK
-                    "LIGHT" -> ThemeSetting.LIGHT
-                    else -> ThemeSetting.SYSTEM
-                }
-                preferences.setThemeSetting(theme)
-            }
-            payload.settings.recoveryFocusId?.let { preferences.setRecoveryFocusId(it) }
-            payload.settings.readingGoalMinimum?.let { preferences.setReadingGoalMinimum(it) }
-            preferences.setOtCurrentReading(payload.settings.oldTestamentCurrent?.bookId, payload.settings.oldTestamentCurrent?.chapter)
-            preferences.setNtCurrentReading(payload.settings.newTestamentCurrent?.bookId, payload.settings.newTestamentCurrent?.chapter)
-            payload.settings.appLockEnabled?.let { preferences.setAppLockEnabled(it) }
-
-            preferences.setOnboardingComplete(true)
-            Result.success(Unit)
-        } catch (e: Exception) {
-            // Roll back in-memory snapshot
             try {
-                streakDao.replaceAll(oldSessions)
-                journalDao.replaceAll(oldEntries)
-                bibleDao.replaceAll(oldCompletions)
-                preferences.setThemeSetting(oldTheme)
-                preferences.setRecoveryFocusId(oldFocus)
-                preferences.setReadingGoalMinimum(oldGoal)
-                preferences.setOtCurrentReading(oldOt?.bookId, oldOt?.chapter)
-                preferences.setNtCurrentReading(oldNt?.bookId, oldNt?.chapter)
-                preferences.setAppLockEnabled(oldLock)
-            } catch (_: Exception) {}
+                // 1. Restore streak sessions
+                val newSessions = payload.streakSessions.map {
+                    StreakSessionEntity(
+                        id = it.id,
+                        recoveryFocusId = it.recoveryFocusId,
+                        startEpochMillis = it.startEpochMillis,
+                        startZoneId = it.startZoneId,
+                        endEpochMillis = it.endEpochMillis,
+                        createdAtEpochMillis = it.createdAtEpochMillis
+                    )
+                }
+                streakDao.replaceAll(newSessions)
 
+                // 2. Restore journal entries
+                val newEntries = payload.journalEntries.map {
+                    JournalEntryEntity(
+                        id = it.id,
+                        createdAtEpochMillis = it.createdAtEpochMillis,
+                        updatedAtEpochMillis = it.updatedAtEpochMillis,
+                        body = it.body,
+                        context = it.context,
+                        streakSessionId = it.streakSessionId
+                    )
+                }
+                journalDao.replaceAll(newEntries)
+
+                // 3. Restore Bible completions
+                val newCompletions = payload.bibleCompletedChapters.map {
+                    BibleChapterCompletionEntity(it.bookId, it.chapter)
+                }
+                bibleDao.replaceAll(newCompletions)
+
+                // 4. Restore preferences
+                payload.settings.themeMode?.let {
+                    val theme = when (it) {
+                        "DARK" -> ThemeSetting.DARK
+                        "LIGHT" -> ThemeSetting.LIGHT
+                        else -> ThemeSetting.SYSTEM
+                    }
+                    preferences.setThemeSetting(theme)
+                }
+                payload.settings.recoveryFocusId?.let { preferences.setRecoveryFocusId(it) }
+                payload.settings.readingGoalMinimum?.let { preferences.setReadingGoalMinimum(it) }
+                preferences.setOtCurrentReading(payload.settings.oldTestamentCurrent?.bookId, payload.settings.oldTestamentCurrent?.chapter)
+                preferences.setNtCurrentReading(payload.settings.newTestamentCurrent?.bookId, payload.settings.newTestamentCurrent?.chapter)
+                payload.settings.appLockEnabled?.let { preferences.setAppLockEnabled(it) }
+
+                preferences.setOnboardingComplete(true)
+                Result.success(Unit)
+            } catch (e: Exception) {
+                // Roll back in-memory snapshot
+                try {
+                    streakDao.replaceAll(oldSessions)
+                    journalDao.replaceAll(oldEntries)
+                    bibleDao.replaceAll(oldCompletions)
+                    preferences.setThemeSetting(oldTheme)
+                    preferences.setRecoveryFocusId(oldFocus)
+                    preferences.setReadingGoalMinimum(oldGoal)
+                    preferences.setOtCurrentReading(oldOt?.bookId, oldOt?.chapter)
+                    preferences.setNtCurrentReading(oldNt?.bookId, oldNt?.chapter)
+                    preferences.setAppLockEnabled(oldLock)
+                } catch (_: Exception) {}
+
+                Result.failure(e)
+            }
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    private fun validatePayload(payload: BackupPayload): Result<Unit> {
-        if (payload.schemaVersion > 1) {
-            return Result.failure(IllegalStateException("Backup schema version ${payload.schemaVersion} is newer than this app supports."))
+    fun validatePayload(payload: BackupPayload) {
+        if (payload.schemaVersion !in 1..2) {
+            throw IllegalArgumentException("Unsupported schema version: ${payload.schemaVersion}")
         }
 
         // Validate active sessions count (at most one active)
         val activeCount = payload.streakSessions.count { it.endEpochMillis == null }
         if (activeCount > 1) {
-            return Result.failure(IllegalStateException("Invalid backup: Multiple active streak sessions found."))
+            throw IllegalArgumentException("Multiple active streak sessions found.")
         }
 
-        // Validate Bible chapters bounds (book 1..66, chapter >= 1)
-        for (comp in payload.bibleCompletedChapters) {
-            if (comp.bookId !in 1..66 || comp.chapter < 1) {
-                return Result.failure(IllegalStateException("Invalid Bible completion in backup: Book ${comp.bookId}, Ch. ${comp.chapter}"))
+        // Validate session timezones
+        for (session in payload.streakSessions) {
+            try {
+                java.time.ZoneId.of(session.startZoneId)
+            } catch (_: Exception) {
+                throw IllegalArgumentException("Invalid timezone: ${session.startZoneId}")
             }
         }
 
-        // Validate journal entries
+        // Validate journal entries and dangling references
+        val sessionIds = payload.streakSessions.map { it.id }.toSet()
         for (entry in payload.journalEntries) {
-            if (entry.updatedAtEpochMillis < entry.createdAtEpochMillis) {
-                return Result.failure(IllegalStateException("Invalid journal entry: updated time earlier than created time."))
+            if (entry.streakSessionId != null && !sessionIds.contains(entry.streakSessionId)) {
+                throw IllegalArgumentException("Dangling journal streakSessionId: ${entry.streakSessionId}")
             }
         }
 
-        return Result.success(Unit)
+        // Validate Bible completed chapters and duplicates
+        val seenChapters = mutableSetOf<Pair<Int, Int>>()
+        for (comp in payload.bibleCompletedChapters) {
+            if (comp.bookId !in 1..66) {
+                throw IllegalArgumentException("Invalid Bible book ID: ${comp.bookId}")
+            }
+            val maxCh = BOOK_CHAPTER_COUNTS.getOrElse(comp.bookId) { 0 }
+            if (comp.chapter < 1 || comp.chapter > maxCh) {
+                throw IllegalArgumentException("Invalid chapter count: Book ${comp.bookId} has $maxCh chapters, but got ${comp.chapter}")
+            }
+            if (!seenChapters.add(comp.bookId to comp.chapter)) {
+                throw IllegalArgumentException("Duplicate completed chapter: Book ${comp.bookId}, Ch. ${comp.chapter}")
+            }
+        }
     }
 
     private fun deriveKey(passphrase: String, salt: ByteArray, iterations: Int): SecretKeySpec {

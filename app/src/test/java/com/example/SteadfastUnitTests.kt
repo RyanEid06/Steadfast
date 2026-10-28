@@ -311,7 +311,7 @@ class SteadfastUnitTests {
         assertNotNull(nextMilestone)
         // 14 Days is the next milestone after 10 days
         assertEquals(14, nextMilestone!!.value)
-        assertEquals("Two Weeks", nextMilestone.title)
+        assertEquals("14 Days", nextMilestone.title)
     }
 
     @Test

@@ -144,7 +144,6 @@ object StreakDurationCalculator {
                 listOf(
                     TimeUnitDisplay(duration.days.toLong(), if (duration.days == 1) "day" else "days"),
                     TimeUnitDisplay(duration.hours.toLong(), if (duration.hours == 1) "hour" else "hours"),
-                    TimeUnitDisplay(duration.minutes.toLong(), if (duration.minutes == 1) "min" else "mins"),
                     TimeUnitDisplay(duration.seconds.toLong(), if (duration.seconds == 1) "sec" else "secs")
                 )
             }

@@ -9,13 +9,23 @@ data class CuratedVerse(
     val chapter: Int,
     val verseNumber: String,
     val theme: String,
-    val isFromCompletedChapter: Boolean = false
+    val isFromCompletedChapter: Boolean = false,
+    val text: String? = null,
+    val translation: String? = null
 )
 
 class VerseRepository(
     private val seedLoader: AssetSeedLoader,
     private val bibleDao: BibleDao
 ) {
+    companion object {
+        private val VERIFIED_TEXTS = mapOf(
+            "Philippians 4:13" to ("I can do all things through Christ, who strengthens me." to "WEB"),
+            "James 4:7" to ("Be subject therefore to God. Resist the devil, and he will flee from you." to "WEB"),
+            "1 Corinthians 10:13" to ("No temptation has taken you except what is common to man. God is faithful, who will not allow you to be tempted above what you are able, but will with the temptation also make the way of escape, that you may be able to endure it." to "WEB")
+        )
+    }
+
     private val catalog by lazy { seedLoader.loadVerseCatalog() }
     private val books by lazy { seedLoader.loadBibleBooks() }
 
@@ -46,6 +56,10 @@ class VerseRepository(
     private val recentShownReferences = mutableListOf<String>()
     private val maxRecentHistory = 15
 
+    fun getAllCatalogVerses(): List<CuratedVerse> = allVerses
+
+    fun getRecentHistory(): List<String> = recentShownReferences.toList()
+
     private fun parseReference(reference: String, theme: String): CuratedVerse? {
         val colonIdx = reference.lastIndexOf(':')
         if (colonIdx == -1) return null
@@ -57,12 +71,16 @@ class VerseRepository(
         val bookPart = beforeColon.substring(0, spaceIdx).trim()
         val chapterPart = beforeColon.substring(spaceIdx + 1).trim().toIntOrNull() ?: 1
 
+        val verified = VERIFIED_TEXTS[reference]
+
         return CuratedVerse(
             reference = reference,
             bookName = bookPart,
             chapter = chapterPart,
             verseNumber = versePart,
-            theme = theme
+            theme = theme,
+            text = verified?.first,
+            translation = verified?.second
         )
     }
 

@@ -15,7 +15,10 @@ val LocalReducedMotion = compositionLocalOf { false }
 
 object ReducedMotionPolicy {
 
+    var testReducedMotionOverride: Boolean? = null
+
     fun isReducedMotionEnabled(context: Context): Boolean {
+        testReducedMotionOverride?.let { return it }
         return try {
             val scale = Settings.Global.getFloat(
                 context.contentResolver,

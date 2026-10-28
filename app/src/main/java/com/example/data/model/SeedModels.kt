@@ -5,7 +5,7 @@ data class BibleBook(
     val name: String,
     val testament: String, // "OT" or "NT"
     val chapters: Int,
-    val order: Int
+    val order: Int = 0
 )
 
 data class BibleBooksData(

@@ -8,10 +8,27 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 
+enum class AuthPromptState {
+    IDLE,
+    SHOWING,
+    AUTHENTICATED,
+    ERROR
+}
+
 object BiometricLockManager {
 
     @Volatile
     private var isPromptActive = false
+
+    var currentState: AuthPromptState = AuthPromptState.IDLE
+        private set
+
+    fun isPromptActive(): Boolean = isPromptActive
+
+    fun resetState() {
+        isPromptActive = false
+        currentState = AuthPromptState.IDLE
+    }
 
     enum class AuthCapability {
         READY,

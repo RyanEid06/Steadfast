@@ -25,6 +25,10 @@ class SteadfastRepository(
         startEpochMillis: Long,
         startZoneId: String = ZoneId.systemDefault().id
     ): Long {
+        val now = System.currentTimeMillis()
+        if (startEpochMillis > now) {
+            throw IllegalArgumentException("Streak start date cannot be in the future.")
+        }
         preferences.setRecoveryFocusId(focusId)
         preferences.clearShownMilestones()
         val session = StreakSessionEntity(
