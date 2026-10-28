@@ -24,7 +24,7 @@
         </activity>
 
         <receiver
-            android:name="com.steadfast.app.widget.SteadfastWidgetProvider"
+            android:name="com.example.widget.SteadfastWidgetProvider"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
