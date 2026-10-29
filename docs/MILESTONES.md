@@ -12,7 +12,7 @@ The 90-day and 3-month milestones are intentionally both present even when they 
 
 - One celebration per milestone per active streak session.
 - Dismissible immediately.
-- A missed celebration should be shown on next app open, but do not stack multiple full-screen celebrations. If several were crossed while away, show the highest newly reached milestone and mark the earlier ones reached.
+- Current catch-up selection shows the highest achieved milestone whose ID has not been recorded as shown. Dismissing it records that ID only; earlier unshown milestones can be selected on later evaluations. The implementation does not yet coalesce all missed milestones into one recorded batch.
 
 ## Impact counters
 

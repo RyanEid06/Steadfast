@@ -1,88 +1,79 @@
-# V1 Acceptance Tests
+# V1 acceptance checklist
 
-A build is not “done” until these pass.
+Use this checklist for an acceptance run. A listed test is not considered passed merely because it is specified here. Local automated evidence and remaining manual/device checks are summarized below.
 
-## Offline/privacy
+## Offline and privacy
 
-- App completes onboarding, streak tracking, Bible tracking, journal, widget, backup export/import and restart with airplane mode enabled.
-- Release manifest has no unnecessary INTERNET permission.
-- No analytics/ad/telemetry SDK detected.
+- [ ] Complete onboarding, streak tracking, Bible tracking, journal, widget, backup export/import, and restart with airplane mode enabled.
+- [x] Manifest inspection confirms no `INTERNET` permission and Android auto backup is disabled.
+- [ ] Confirm no analytics, ad, or telemetry SDK is present in the packaged app.
 
 ## Onboarding
 
-- Fresh install launches wizard.
-- User can choose recovery focus, exact non-future start time, optional OT/NT current reading, 1–5+ reading goal, theme, and lock.
-- Reopening after completion does not replay onboarding unless requested from Settings.
+- [ ] Fresh install launches the wizard.
+- [ ] User can choose a recovery focus, valid non-future start time, optional OT/NT bookmarks, reading goal **1–5**, theme, and app lock.
+- [ ] Completed onboarding does not replay unless restarted from Settings.
 
-## Dashboard
+## Dashboard and time
 
-- No scrolling on normal supported portrait screens.
-- Counter updates each second without DB writes/queries each second.
-- `<30d` shows D/H/S; `>=30d` adds calendar month; `>=1y` adds calendar year.
-- Leap-year and DST tests pass.
-- Settings is not a bottom-nav item.
+- [ ] Portrait layout fits supported normal screens without scrolling; Settings is not a bottom destination.
+- [ ] Timer advances each second while visible without per-second Room writes or queries.
+- [ ] Display uses days/hours/seconds below 30 elapsed days, adds calendar months from 30 elapsed days, and uses years/months/days/hours from one calendar year.
+- [ ] Leap-year, DST, month-end, and stored-zone behavior are correct.
+- [ ] Wide/short window remains usable.
 
-## Recovery restart/history
+## Restart and journal
 
-- Start Again requires confirmation.
-- Old session remains in history.
-- Longest streak remains correct.
-- New streak starts at requested timestamp.
-- Optional journal note survives restart.
+- [ ] Start Again requires confirmation and preserves the archived session.
+- [ ] Restart chronology rejects future, inverted, and overlapping intervals; longest-streak calculation remains correct.
+- [ ] Optional restart note persists and links to its prior streak session.
+- [ ] Create, edit, delete, and newest-first journal ordering work offline; long lists remain usable.
+- [ ] Struggling → Write Note opens the URGE composer directly.
 
-## Journal
+## Bible and milestones
 
-- Create/edit/delete works offline.
-- Newest-first ordering is stable.
-- Large journal histories scroll smoothly without repeated loading flicker.
+- [ ] Bundled catalog contains exactly 66 books and 1,189 chapters with correct chapter counts.
+- [ ] Chapter completion immediately updates book, testament, and whole-Bible progress.
+- [ ] OT and NT bookmarks are independent; each validates its testament and only one per testament is stored.
+- [ ] Chapter completion does not move a reading bookmark.
+- [ ] Reading goal displays as a motivational minimum and is not presented as measured daily completion.
+- [ ] Day milestones use elapsed days; month/year milestones use calendar duration. Celebration history resets for a new session and does not repeat recorded IDs.
 
-## Bible
+## Struggling flow
 
-- Exactly 66 books / 1,189 chapters available.
-- Chapter counts match `data/bible_books.json`.
-- Toggling a chapter immediately updates book/testament/whole progress.
-- Current OT and NT pointers are independent and capped at one each.
-- Completing a chapter never silently moves current reading.
-- Reading goal displays but does not pretend to know daily completion.
+- [ ] Reachable in one Dashboard action.
+- [ ] Prefers references from completed chapters when available and falls back gracefully.
+- [ ] Another Verse avoids immediate repetition.
+- [ ] Breathing, Write Note, and View Progress actions work.
 
-## “I’m struggling”
+## Backup and restore
 
-- Reachable in one tap from Dashboard.
-- Prioritizes verse references from completed chapters when available.
-- Falls back gracefully when none exist.
-- Another Verse avoids immediate repetition.
-- Breathe, Write Note, View Progress actions work.
+- [ ] Export creates a `.steadfast` file; wrong passphrase, corrupt, and unsupported files fail without changing user data.
+- [ ] Valid round trip restores all user data, settings, bookmarks, and milestone IDs.
+- [ ] Preview is read-only; replacement requires confirmation and is all-or-nothing across Room data.
+- [ ] Cross-device restore, SAF/provider failures, and interrupted-process recovery are accepted on supported devices.
 
-## Milestones
+## App lock
 
-- Every frozen milestone triggers correctly.
-- Celebration does not repeat every launch.
-- 90 days and 3 calendar months are treated independently.
+- [ ] API 29 enrolled credential and biometric behavior matches the weak-biometric/device-credential policy; API 30+ uses strong-biometric/device-credential policy.
+- [ ] Unavailable authentication does not expose content; enabling lock requires available device authentication.
+- [ ] Cold start, cancellation, failed credential, retry, background timeout, process restart, and activity recreation remain correctly locked/unlocked.
 
-## Backup
+## Widget and UI quality
 
-- Export creates a `.steadfast` file.
-- Wrong passphrase fails safely without data mutation.
-- Valid round trip restores all user data.
-- Corrupt/unsupported backup is rejected.
-- Import is transactional.
+- [ ] Widget shows current elapsed day count and opens Dashboard; it refreshes through platform widget updates rather than every second.
+- [ ] Widget remains coherent across reboot/app update where Android permits.
+- [ ] Both themes are coherent; text remains legible at common font scales and in landscape.
+- [ ] Reduced-motion preference is respected; no dead buttons, placeholder pages, permanent fake data, or repeated loading flicker.
 
-## Lock
+## Observed local evidence
 
-- Biometric and device credential paths work.
-- No duplicate prompts or stuck overlay on lifecycle changes.
-- Back/foreground timeout behavior is consistent.
+These results describe the reconciliation work and do not mark the manual checklist above complete:
 
-## Widget
+- Latest offline Gradle checkpoint: `testDebugUnitTest lintDebug assembleDebug assembleRelease` exited successfully. The cached JVM result reported **93 tests, 0 failures/errors/skips**. Lint reported **0 errors/fatal issues and 40 warnings**.
+- Earlier full integrated gate included **4/4 API 37 instrumentation tests**. They covered app/package startup, unavailable-auth retry/recreation, navigation, and native backup/restore behavior; they are not physical-device acceptance.
+- Universal and ARM64 optimized APK outputs were assembled and inspected: universal contains all four supported ABIs; ARM64 contains only `arm64-v8a`. Packaged non-native entries were byte-identical. APK verification/alignment checks passed for the private local-test outputs.
+- Manual emulator coverage included credential cancel/wrong/valid PIN, cold start, one prompt rotation, theme/font/landscape, URGE flow, and breathing. A rapid rotate-back while the system prompt was dismissing once left a secure overlay requiring Back; normal and single-rotation paths subsequently passed.
+- Physical-device authentication, API 29 hardware/credentials, complete TalkBack/OEM review, cross-device backup, SAF failures, Keystore invalidation, and true OS process-kill boundaries remain unverified.
 
-- Shows current day count and opens Dashboard.
-- Does not try to update every second.
-- Survives reboot/app update where platform permits.
-
-## UI quality
-
-- Both themes are coherent.
-- No purple AI-gradient/bubble aesthetic.
-- No clipped text at common font scales.
-- Reduced-motion preference is respected.
-- No dead buttons, placeholder pages, permanent fake data, or repeated spinners.
+See [the reconciliation report](RECONCILIATION_REPORT.md) for scope and evidence detail.

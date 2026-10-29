@@ -1,115 +1,75 @@
-# Steadfast (Android)
+# Steadfast
 
-> **Current Status**: Pre-release / Private Testing. Not for public store release yet.
+Offline Android app for recovery tracking, personal journaling, and Bible reading progress. Built with Kotlin and Jetpack Compose for Android 10+.
 
-Steadfast is a private, offline Christian recovery and daily Scripture progress tracker built around personal freedom, grace, and sustained victory. It contains no accounts, no cloud sync, no tracking, and no shame mechanics.
+**Status: pre-release, device testing pending.** The app is implemented and locally verified; public store distribution and production signing are not configured.
 
----
+## Features
 
-## Architectural Philosophy & Privacy Model
+- Live recovery timer, calendar-aware months/years, history, and validated restart times.
+- Journey with Overview, History, searchable Journal, and optional restart reflections.
+- Bible completion across 66 books / 1,189 chapters, independent OT/NT bookmarks, and a reading target of 1–5 chapters.
+- “I'm Struggling” support with exact-reference Scripture, 4-4-4-4 box breathing, progress, and direct URGE journaling.
+- Milestones, conservative JSON-driven elapsed-time comparisons with source notes, and a home-screen widget.
+- System/light/dark themes, reduced motion, scalable layouts, and optional system biometric/device-credential lock.
+- Encrypted portable backups, read-only import preview, explicit replacement confirmation, validation, and interrupted-restore recovery.
 
-- **100% Offline & Local**: No `INTERNET` permission in `AndroidManifest.xml`. Zero network requests, analytics, crash reporters, or external API endpoints.
-- **Zero Cloud Accounts**: No logins, email registrations, or authentication servers.
-- **No Mandatory Daily Check-Ins**: Designed around freedom from anxiety. The timer counts forward continuously without requiring daily check-in button taps.
-- **Local Persistence**: Recovery sessions, journal entries, and Bible chapter completions are persisted locally on-device in Room (SQLite) and DataStore.
-- **Auto Backup Excluded**: Android cloud auto-backup is disabled (`android:allowBackup="false"`), preventing Google Drive / system cloud backup of sensitive recovery history.
-- **Encrypted Portable Backup**: Manual backup exports (`.steadfast`) are encrypted using PBKDF2WithHmacSHA256 (65,536 iterations, 256-bit key) and AES-256-GCM authenticated encryption.
-- **Local Device Lock**: Biometric Prompt with fallback to device credentials (PIN/Pattern/Password) protects app access when enabled.
+## Privacy and Scripture
 
----
+No accounts, cloud sync, analytics, ads, notifications, or INTERNET permission. Room and DataStore keep user data in the app sandbox; Android automatic backup is disabled. The Room database itself is **not encrypted**. App lock controls access to the app UI.
 
-## Core Feature Overview
+Portable `.steadfast` backups use AES-256-GCM with PBKDF2-HMAC-SHA256 (210,000 iterations), logical schema 2 and the `STDF_V2` envelope. Legacy schemas/envelopes remain importable. Export requires matching passphrases of at least 12 characters. See [Security and backup](docs/SECURITY_BACKUP.md).
 
-1. **Dashboard & Precision Streak Counter**
-   - Live second-by-second circular counter updating gracefully in the foreground with zero background battery impact.
-   - **Display Tiers**:
-     - *Under 30 days*: Days : Hours : Seconds (Minutes omitted from focal counter for clean visual hierarchy).
-     - *30 days to 1 year*: Months : Days : Hours : Seconds (accurate calendar arithmetic).
-     - *Over 1 year*: Years : Months : Days : Hours : Seconds.
-   - Cumulative minutes and seconds won back remain available in the Time & Motivation section.
-   - Daily verified Scripture of Peace paired strictly with its exact matching biblical reference.
-   - Prominent, instant access to the "I'm Struggling" emergency sanctuary.
+Displayed bundled quotations use verified public-domain WEB text paired with the exact reference. If text is unavailable, the app shows a neutral Bible-reading prompt. Licensed translations such as NLT require permission before adding their text; the reference catalogs do not grant those rights.
 
-2. **Emergency Grace Sanctuary ("I'm Struggling")**
-   - Rapid-relief modal offering calm grounding without shame.
-   - Prioritizes Scripture passages from chapters the user has already marked completed, using verified anti-repeat cycling.
-   - Calming 4-4-4-4 Box Breathing exercise with real-time visual pacing.
-   - "Write Note" shortcut that immediately opens the Journal composer with the `URGE` context tag preselected.
+## Build
 
-3. **Canonical Protestant Bible Progress**
-   - All 66 canonical books (39 Old Testament, 27 New Testament) across 1,189 chapters.
-   - Interactive chapter grid:
-     - **Tap**: Toggles completed / unread state.
-     - **Long-Press**: Sets active reading location bookmark for that testament.
-   - Supports up to one Old Testament bookmark and one New Testament bookmark simultaneously.
-   - Non-mandatory chapter order; completing a chapter never forces the bookmark forward.
-   - No "Bible streak" or guilt mechanics. Daily goals remain motivational only.
+Use JDK 21 and an existing Android SDK with Platform 36 and Build Tools 36.0.0 or later. Dependencies and plugin versions are pinned in [the version catalog](gradle/libs.versions.toml). Set `ANDROID_HOME` or use an ignored local `local.properties` file for your SDK.
 
-4. **Journey, History & Sanctuary Journal**
-   - Lifetime analytics: current streak, longest streak, archived streaks, and milestone timeline.
-   - "Start Again" grace flow that safely archives completed streaks and provides an optional reflection note (`RESTART` tag) without forcing journaling.
-   - Sanctuary Journal with real-time search and context filter chips (`ALL`, `GENERAL`, `URGE`, `RESTART`).
-   - Full create, edit, and delete operations with confirmation dialogs.
+Windows:
 
-5. **Scriptural & Spiritual Scale Comparisons**
-   - Offline library of verifiable, grounded scale comparisons based on biblical milestones, solar/lunar cycles, and physical history.
-   - Free of pseudoscientific neural rewiring claims.
-
----
-
-## Tech Stack
-
-- **Platform**: Android (minSdk 29, targetSdk 36, compileSdk 36)
-- **Language**: Kotlin 2.2+
-- **UI Framework**: Jetpack Compose with Material 3 & Material Icons Extended
-- **Architecture**: Single-Activity, Navigation Compose, Clean Architecture (Repositories, DAOs, DataStore)
-- **Local Persistence**: AndroidX Room 2.7.0 with Kotlin Symbol Processing (KSP)
-- **Preferences**: Jetpack DataStore Preferences
-- **Security & Biometrics**: AndroidX Biometric 1.1.0, JCE PBKDF2WithHmacSHA256 + AES-GCM
-- **Serialization**: Moshi 1.15.2 (Kotlin JSON adapter)
-- **Build System**: Gradle 9.3.1 with Android Gradle Plugin (AGP) 9.1.1
-- **Testing**: JUnit 4, Robolectric 4.16.1, AndroidX Test Core, Kotlinx Coroutines Test
-
----
-
-## Scripture Licensing & Text Rules
-
-- Scripture quotes must always match their designated reference exactly.
-- Never invent, merge, or paraphrase verses while presenting them as quotations.
-- Default verified text in this build utilizes verified public-domain translations (such as the World English Bible / WEB).
-- If exact verified text is not packaged for a reference, the UI displays the reference with a neutral reading prompt ("Open your Bible to this passage") rather than generic or fabricated text.
-- Do not bulk-copy copyrighted translations (e.g. NLT) without proper publication licenses.
-
----
-
-## Build Requirements
-
-- JDK 21 (Eclipse Temurin 21 recommended)
-- Android SDK Platform 36 and build-tools 36.0.0+
-- Linux, macOS, or Windows
-
----
-
-## Build & Test Commands
-
-Steadfast is completely self-contained and clone-and-build capable:
-
-```bash
-# 1. Clean and assemble debug APK
-./gradlew clean assembleDebug
-
-# 2. Run unit tests
-./gradlew test
-
-# 3. Run Android lint checks
-./gradlew lint
+```powershell
+.\gradlew.bat test lintDebug assembleDebug assembleRelease
 ```
 
-The compiled debug APK will be generated at:
-`app/build/outputs/apk/debug/app-debug.apk`
+macOS/Linux:
 
----
+```bash
+./gradlew test lintDebug assembleDebug assembleRelease
+```
 
-## Repository Privacy
+One codebase produces two APKs in each build:
 
-During pre-release development, this repository must remain **Private**. If access permissions in your environment do not allow automatic visibility toggling, ensure the repository visibility is set to **Private** in GitHub repository settings.
+| Variant | Universal | ARM64 only |
+|---|---|---|
+| Debug | `app/build/outputs/apk/debug/app-universal-debug.apk` | `app/build/outputs/apk/debug/app-arm64-v8a-debug.apk` |
+| Release, unsigned by default | `app/build/outputs/apk/release/app-universal-release-unsigned.apk` | `app/build/outputs/apk/release/app-arm64-v8a-release-unsigned.apk` |
+
+The universal APK includes the bundled ARM64, ARM32, x86 and x86_64 libraries. ARM64 contains only `arm64-v8a`; both share package `com.steadfast.app`, version 1.0/code 1, features and data format. Install the APK compatible with your device.
+
+Release builds use R8 minification and resource shrinking. The locally delivered, optimized test APKs were approximately **8.14 MiB universal / 8.05 MiB ARM64**; the unoptimized universal debug build was about 67.69 MiB. Most of that difference is unshrunk bytecode/development tooling, rather than CPU libraries.
+
+Debug builds use the standard local debug signing identity. Release builds are unsigned unless `KEYSTORE_PATH`, `STORE_PASSWORD` and `KEY_PASSWORD` are supplied externally; the configured release alias is `upload`. Configured signing removes `-unsigned` from release output filenames. Private test copies may be signed with a local debug identity; these are not production release signatures. Do not commit keys, passwords, backup files, local SDK paths or APKs.
+
+For instrumentation, use a disposable emulator and an explicit `ANDROID_SERIAL`, then run `connectedDebugAndroidTest`. The unavailable-authentication test requires a device without enrolled authentication. Do not treat emulator tests as physical-device acceptance.
+
+## Verification
+
+As of 2026-10-29:
+
+- Integrated JVM/Robolectric suite: 93 passing tests, no failures/errors/skips. The later packaging-only gate reused the same passing results from Gradle cache.
+- Earlier API 37 emulator instrumentation: 4 passing tests, no failures/skips, including native Keystore/on-disk backup and navigation regressions.
+- Debug and optimized release assemblies passed. Universal/ARM64 contents, identical non-native payloads, test signatures and ZIP alignment were inspected.
+- Latest offline lint: 0 errors, 40 warnings. An earlier online run reported 56 warnings, including dependency freshness checks.
+
+Physical/API 29 enrolled authentication, real biometric sensors, cross-device backup/SAF-provider failures, Keystore invalidation, OS process-kill restore boundaries and full TalkBack/OEM acceptance remain open. See [Acceptance tests](docs/ACCEPTANCE_TESTS.md) and [Reconciliation report](docs/RECONCILIATION_REPORT.md). No GitHub CI result is claimed; the repository currently has no Actions workflow.
+
+## Repository guide
+
+- [Architecture](docs/ARCHITECTURE.md) and [data model](docs/DATA_MODEL.md)
+- [Product requirements](docs/PRODUCT_SPEC.md), [UI specification](docs/UI_SPEC.md), [frozen design](docs/DESIGN_FREEZE.md) and [design references](design/README.md)
+- [Security and backup](docs/SECURITY_BACKUP.md), [synthetic payload examples](samples/README.md), [milestones](docs/MILESTONES.md)
+- [Development rules](GEMINI.md), [current work checkpoint](CODEX_WORKLOG.md), [QA status](STEADFAST_V1_CORRECTION_QA.md)
+- `app/src/main/java/com/steadfast/app/`: application and shared code; matching JVM/instrumentation source trees under `app/src/test` and `app/src/androidTest`
+- `data/`: reference catalogs; `app/src/main/assets/`: runtime catalogs. Keep corresponding copies in sync.
+- [Original implementation prompts](prompts/README.md): historical reference, not a request to rebuild completed phases.

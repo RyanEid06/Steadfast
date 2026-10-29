@@ -1,31 +1,22 @@
-# GEMINI.md — implementation contract
+# Steadfast development rules
 
-This file is the top-level contract for any coding agent.
+## Current project
 
-## Product truth
+Steadfast is an implemented native Android recovery and Bible-progress app. Read `CODEX_WORKLOG.md` and the current source before changes. The original files under `prompts/` describe completed implementation phases; do not restart them or replace the app with a scaffold.
 
-The frozen product is **Steadfast**, an offline Christian recovery + Bible-progress Android app. Do not rename it, reinterpret it as a porn-only app, add cloud features, or redesign the navigation without explicit approval.
+## Product and design
 
-## Visual implementation contract
+- Preserve the Steadfast name, offline behavior, recovery focuses and Bible progress. No accounts, cloud, networking, analytics, ads, notifications, daily check-ins or Bible streak without explicit approval.
+- Before UI work, read `docs/DESIGN_FREEZE.md` and `design/README.md`. Style 1 owns structure/identity, Style 3 palette, Style 2 Journal, and Style 3 chapter grid.
+- Exactly three bottom destinations: Dashboard, Journey and Bible. Settings stays separate. Dashboard remains non-scrolling, adapting to compact windows.
+- Never invent Scripture or associate text with the wrong reference. Use bundled verified WEB quotations or a neutral reference-only prompt; respect translation licensing.
+- Never add shame language or unsupported medical/recovery claims. Preserve the safety copy in `docs/PRODUCT_SPEC.md`.
 
-Before UI work, read `docs/DESIGN_FREEZE.md` and `design/README.md`. Do **not** choose one board wholesale and do not blend them arbitrarily. Style 1 is structure/identity; Style 3 is palette; Style 2 is Journal; Style 3 is Book Detail/chapter grid.
+## Implementation and checks
 
-## Implementation behavior
-
-1. Work in small, reviewable phases from `prompts/`.
-2. Before editing, inspect the existing repo and preserve working behavior.
-3. After each phase run unit tests, lint, and a debug build. Fix failures before moving on.
-4. Do not leave placeholder buttons, dead navigation, fake loading states, fake charts, or TODO-only production paths.
-5. No network permission unless explicitly approved later. V1 must function in airplane mode.
-6. Use current **stable** Android/Kotlin/Compose dependencies available at implementation time; avoid alpha/beta libraries unless unavoidable and documented.
-7. Prefer standard AndroidX/Compose APIs over adding dependencies.
-8. Never hardcode user-specific test data in production.
-9. Never invent Bible verse text. Use only reference metadata unless licensed/user-provided verse text is present in `data/`.
-10. Never add shame language such as “you failed.” Restart language must be encouraging and factual.
-11. Do not make unsupported medical or habit-formation claims.
-12. For recovery focuses involving substances, the app must never present itself as medical treatment; include the safety copy specified in `docs/PRODUCT_SPEC.md`.
-13. Preserve accessibility: semantic labels, minimum touch targets, scalable text, contrast, reduced-motion behavior.
-
-## Quality bar
-
-The app should feel like a polished first-party mobile product: fast launch, no flicker, no unnecessary spinners, no layout jumps, no repeated database scans on each second tick, no janky chart recomputation, and no main-thread I/O.
+- Use the existing Kotlin/Compose, Room, DataStore, AndroidX and JSON patterns. Keep namespace/applicationId `com.steadfast.app`.
+- Keep universal and ARM64 packages on shared source. Preserve privacy/authentication validation and all-or-nothing restore/recovery behavior.
+- Do not add placeholder actions, fake data/progress or unnecessary dependencies. Check current pinned versions before changing tools.
+- Preserve design/data references, accessibility, reduced motion, efficient foreground clocks and user data. Keep matching reference/runtime JSON catalogs in sync.
+- Run checks appropriate to changed behavior. The full local gate is `gradlew test lintDebug assembleDebug assembleRelease` (`gradlew.bat` on Windows). Report actual results and distinguish local, CI, emulator and physical-device evidence.
+- Keep `CODEX_WORKLOG.md` compact and current. Do not commit secrets, local paths, APKs, personal backups, signing keys, build/cache output or machine workarounds.

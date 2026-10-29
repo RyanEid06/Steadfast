@@ -1,6 +1,0 @@
-{
-  "name": "Steadfast",
-  "description": "A private, offline Christian recovery and Bible-progress tracker built on personal freedom and daily Scripture.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

@@ -1,12 +1,12 @@
 {
   "schemaVersion": 2,
   "exportedAtEpochMillis": 1793116800000,
-  "appVersion": "1.0.0",
+  "appVersion": "1.0",
   "settings": {
     "themeMode": "DARK",
     "recoveryFocusId": "pornography",
     "readingGoalMinimum": 2,
-    "appLockEnabled": true,
+    "appLockEnabled": false,
     "oldTestamentCurrent": {
       "bookId": 19,
       "chapter": 23
@@ -14,9 +14,34 @@
     "newTestamentCurrent": {
       "bookId": 43,
       "chapter": 8
-    }
+    },
+    "shownMilestones": "d1",
+    "onboardingComplete": true
   },
-  "streakSessions": [],
-  "journalEntries": [],
-  "bibleCompletedChapters": []
+  "streakSessions": [
+    {
+      "id": 1,
+      "recoveryFocusId": "pornography",
+      "startEpochMillis": 1793030400000,
+      "startZoneId": "UTC",
+      "endEpochMillis": null,
+      "createdAtEpochMillis": 1793030400000
+    }
+  ],
+  "journalEntries": [
+    {
+      "id": 1,
+      "createdAtEpochMillis": 1793030401000,
+      "updatedAtEpochMillis": 1793030401000,
+      "body": "Synthetic example entry.",
+      "context": "GENERAL",
+      "streakSessionId": 1
+    }
+  ],
+  "bibleCompletedChapters": [
+    {
+      "bookId": 19,
+      "chapter": 23
+    }
+  ]
 }

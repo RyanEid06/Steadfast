@@ -20,7 +20,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:text="Day 1"
+        android:text="Open Steadfast"
         android:textColor="#F6F4ED"
         android:textSize="22sp"
         android:textStyle="bold" />
@@ -41,7 +41,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:text="Next: 3 Days"
+        android:text="Open the app to refresh"
         android:textColor="#94A0B4"
         android:textSize="10sp" />
 

@@ -37,7 +37,7 @@ Hierarchy:
 
 No long stats, journal list, history chart, milestone list, or Bible book list on Dashboard.
 
-The layout must adapt to smaller screens by reducing hero height/spacing and scaling type within accessible bounds. Do not introduce user scrolling simply to rescue a poor fixed layout.
+The layout adapts to smaller screens while keeping the full Scripture and primary action reachable. The current wide/short layout uses two columns; portrait retains its fixed composition. Dashboard does not scroll.
 
 ## Journey
 
@@ -45,7 +45,7 @@ Root sections:
 
 - Overview: current + longest streak, compact history preview, next milestone, actions to motivation/milestones/start again.
 - History: streak chart and archived streak cards.
-- Journal: list + add/edit note. **Journal visual composition follows Style 2**, while retaining the global Style 3 palette.
+- Journal: searchable/filterable list with add/edit/delete note controls of at least 48dp. **Journal visual composition follows Style 2**, while retaining the global Style 3 palette. The Struggling Write Note route selects Journal and opens its URGE composer directly.
 
 Do not flash loading states when local data is already available. Use Room Flow/state and stable keys.
 

@@ -162,7 +162,7 @@ Each verse record should include:
 - optional importance/popularity rank
 - optional text only when legally licensed or supplied by project owner
 
-NLT is the preferred translation for user-facing text, but Gemini must not scrape or bulk-copy NLT text.
+The current app displays bundled verified public-domain WEB quotations paired with their exact references. Missing text uses a neutral reference-only reading prompt. NLT remains a possible licensed future addition; do not scrape or bulk-copy it, or label WEB text as NLT. The larger verse-library target is future scope, not a claim about the current bundled catalog.
 
 ## 13. Home-screen widget
 

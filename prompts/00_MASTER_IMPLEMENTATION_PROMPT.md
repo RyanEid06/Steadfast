@@ -1,5 +1,7 @@
 # Gemini Master Implementation Prompt
 
+> Historical implementation phase. Read [current status](../CODEX_WORKLOG.md) before treating these original instructions as new work.
+
 You are implementing **Steadfast**, a frozen V1 Android product. This repository is the source of truth.
 
 Before writing code, read:

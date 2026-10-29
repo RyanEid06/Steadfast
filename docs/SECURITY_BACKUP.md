@@ -1,62 +1,59 @@
-# Security + Backup Specification
+# Security and backup
 
 ## App lock
 
-Use AndroidX BiometricPrompt / modern equivalent with:
+The app uses AndroidX `BiometricPrompt` with the system device credential. On API 29 it requests `BIOMETRIC_WEAK | DEVICE_CREDENTIAL`, because `BIOMETRIC_STRONG | DEVICE_CREDENTIAL` is unsupported there. On API 30 and later it requests `BIOMETRIC_STRONG | DEVICE_CREDENTIAL`. The same policy is used for capability checks and the prompt.
 
-- biometric first when available
-- device credential fallback
-- no custom in-app PIN
-- lock on cold start when enabled
-- lock after returning from background beyond a short timeout (target 30 seconds unless UX testing proves annoying)
-- lifecycle/race-safe behavior; never show duplicate prompts
-
-Reuse the proven SpendWise/Memora behavior if source code is supplied to the implementation agent; otherwise implement cleanly from AndroidX primitives.
+Enabling the lock is rejected with Android enrollment guidance when authentication is unavailable. When enabled, personal content remains locked on cold start until authentication succeeds. Cancellation, failed/terminal authentication, capability errors, or prompt-launch errors do not unlock content; the user can retry. The retained activity-scoped session allows configuration recreation to keep the current prompt/session, but a fresh process is unauthenticated. Returning from background requires authentication after 30 seconds or if the clock moved backward. No custom PIN or biometric secret is stored by the app.
 
 ## Local privacy
 
-V1 is offline. Do not request INTERNET permission. Do not add analytics, crash-reporting SDKs, ad SDKs, remote fonts, or telemetry.
+The manifest disables Android auto backup and has no `INTERNET` permission. Journal entries are stored in the app's Room database; this documentation does not claim that the database itself is encrypted. Sensitive journal, recovery, and passphrase contents must not be logged.
 
-Sensitive values should not be written to logs. Release builds must not log journal text, recovery focus, or backup content.
+## Portable backup format
 
-## Backup file
+The `.steadfast` file is an authenticated encrypted envelope. Its seven-byte header selects the KDF parameters; the header is followed by a random 16-byte salt, a random 12-byte GCM nonce, and AES-GCM ciphertext with a 128-bit tag. The encryption key is 256 bits and is derived from the user passphrase with PBKDF2-HMAC-SHA256.
 
-Extension: `.steadfast`
+| Envelope | Header | PBKDF2 iterations | Use |
+|---|---|---:|---|
+| V2 | `STDF_V2` | 210,000 | Current exports |
+| V1 | `STDF_V1` | 65,536 | Legacy import compatibility |
 
-Requirements:
-
-- versioned schema
-- portable to another Android device
-- contains all user-owned app data: streak sessions, journal, Bible completions, reading pointers/goal, recovery focus, theme preference, app-lock preference (but never biometric secrets/keys), tutorial flags where sensible
-- import validates schema/version and data ranges before mutating live data
-- import is transactional: all-or-nothing
-- create a pre-import rollback snapshot in app-private storage when feasible
-- provide a clear summary before final import
-
-### Security
-
-Because backups contain sensitive journal/recovery data, implement a portable encrypted backup using a user-entered export passphrase, following modern Android cryptographic best practices available at implementation time (authenticated encryption such as AES-GCM and a strong password-based KDF). Do not encrypt a portable backup solely with a device-bound Android Keystore key, because that would make cross-device restore impossible.
-
-Never store the export passphrase.
+Envelope version and JSON payload `schemaVersion` are separate. Exports use schema 2; imports support logical schemas 1 and 2 inside either recognized envelope. New exports require a matching passphrase confirmation of at least 12 characters. Legacy imports keep their historical passphrase behavior, including short or empty passphrases. The portable format is encrypted with the user's passphrase, never solely with a device-bound key. The passphrase is not embedded or saved by the app.
 
 ### Logical payload
 
+Current schema 2 contains:
+
 ```json
 {
-  "schemaVersion": 1,
-  "exportedAtEpochMillis": 0,
-  "appVersion": "1.0.0",
-  "settings": {},
+  "schemaVersion": 2,
+  "exportedAtEpochMillis": 1793116800000,
+  "appVersion": "1.0",
+  "settings": {
+    "themeMode": "SYSTEM",
+    "recoveryFocusId": "pornography",
+    "readingGoalMinimum": 2,
+    "oldTestamentCurrent": null,
+    "newTestamentCurrent": null,
+    "appLockEnabled": false,
+    "shownMilestones": "",
+    "onboardingComplete": true
+  },
   "streakSessions": [],
   "journalEntries": [],
   "bibleCompletedChapters": []
 }
 ```
 
-The encrypted envelope may contain salt/KDF parameters/nonce/ciphertext/tag as required. Exact cryptographic envelope can be finalized during implementation review.
+Settings fields are optional for compatibility. If absent in a replacement import, defaults are SYSTEM theme, `pornography` focus, goal 2, no reading bookmarks, app lock off, and no shown milestones; missing `onboardingComplete` defaults to true. Schema 2 includes the shown-milestone IDs and onboarding state. There is no notification preference. The device-local background timestamp is never exported.
 
-## Import semantics
+Before data changes, preview decrypts and validates the full payload, then the user confirms replacement. Validation checks the schema and required top-level fields, payload size (maximum 32 MiB), timestamps, unique IDs, recovery-focus/theme values, goal range 1..5, OT/NT bookmark bounds, milestone IDs, session chronology/non-overlap, journal references/context, and completed chapter bounds. A wrong passphrase, corrupt file, or unsupported schema cannot mutate live data.
 
-Default import mode: **replace user data from backup** after explicit confirmation. Do not attempt a silent merge of streak histories/journals in V1; merge conflict logic is unnecessary complexity.
+## Replacement and interrupted-restore recovery
 
-Theme may be restored from backup because this app is single-user/private. Biometric lock preference may be restored, but the destination device must re-authenticate/re-enroll through Android APIs as needed.
+Restore replaces user data; it does not merge histories. Before mutation, an `AtomicFile` journal in app-private `noBackupFilesDir` stores before/after preference snapshots and an opaque random token. The journal is encrypted with an Android Keystore AES-GCM key. It contains no Room rows or journal body. The token is recorded in the `steadfast_restore_commit` metadata table within the same Room transaction that replaces streak, journal, and Bible-completion rows. DataStore applies all user settings in one edit before the Room transaction commits.
+
+On startup, recovery reads the Room token: a matching token reapplies the after-preferences; otherwise it restores the before-preferences while Room retains its prior rows. It removes the encrypted journal only after reconciliation succeeds. Recovery failure retains the journal and blocks protected content until retry succeeds. Keystore loss or unreadable recovery data fails closed; there is no plaintext rollback fallback. Widget reads and publication are serialized with restore operations and use neutral content while restore is pending.
+
+See [the reconciliation report](RECONCILIATION_REPORT.md) for verification scope and remaining platform/device checks.

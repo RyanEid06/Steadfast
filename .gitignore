@@ -17,7 +17,16 @@ build/
 .cxx
 local.properties
 .env
+.env.*
 debug.keystore
 debug.keystore.base64
 .aistudio/
 .build-outputs/
+.build-tools/
+.build-*.log
+.build-thread-dump.txt
+*.apk
+*.aab
+*.jks
+*.keystore
+*.steadfast

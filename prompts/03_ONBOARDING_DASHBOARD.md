@@ -1,3 +1,5 @@
 # Phase 3 — Onboarding + Dashboard
 
+> Historical implementation phase. Read [current status](../CODEX_WORKLOG.md) before treating these original instructions as new work.
+
 Implement the complete wizard and fixed no-scroll Dashboard. Before UI work, read `docs/DESIGN_FREEZE.md`. Use `design/mockups/canonical/03_onboarding_tutorial_style1.png` for onboarding/tutorial composition and `design/mockups/canonical/02_dashboard_structure_style1.png` for the circular Dashboard structure. Apply the Style 3 color system from `design/mockups/canonical/style_3_PALETTE_and_CHAPTER_reference.png`; do not copy Style 1 colors literally. Add live second ticker scoped to visible lifecycle, progressive unit display, theme selection, Scripture-reference card placeholder layer, I’m Struggling entry point, and settings entry. Settings must remain a top-level icon, not a fourth bottom-nav item even if a concept image shows one. Match approved dark/light direction with polished restrained motion and accessibility. Finish green.

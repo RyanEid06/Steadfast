@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-  namespace = "com.example"
+  namespace = "com.steadfast.app"
   compileSdk = 36
 
   defaultConfig {
@@ -18,21 +18,21 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
-  // Do not remove or modify these signingConfigs. They are necessary for building, installing,
-  // and updating Android apps in AI Studio.
+  splits {
+    abi {
+      isEnable = true
+      reset()
+      include("arm64-v8a")
+      isUniversalApk = true
+    }
+  }
+
   signingConfigs {
-    create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      storeFile = file(keystorePath)
+    if (!System.getenv("KEYSTORE_PATH").isNullOrBlank()) create("release") {
+      storeFile = file(System.getenv("KEYSTORE_PATH"))
       storePassword = System.getenv("STORE_PASSWORD")
       keyAlias = "upload"
       keyPassword = System.getenv("KEY_PASSWORD")
-    }
-    create("debugConfig") {
-      storeFile = file("${rootDir}/debug.keystore")
-      storePassword = "android"
-      keyAlias = "androiddebugkey"
-      keyPassword = "android"
     }
   }
 
@@ -42,14 +42,7 @@ android {
       isMinifyEnabled = true
       isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      // Do not remove or modify this signingConfig assignment. It is necessary for Android apps in
-      // AI Studio.
-      signingConfig = signingConfigs.getByName("release")
-    }
-    debug {
-      // Do not remove or modify this signingConfig assignment. It is necessary for Android apps in
-      // AI Studio.
-      signingConfig = signingConfigs.getByName("debugConfig")
+      signingConfig = signingConfigs.findByName("release")
     }
   }
   compileOptions {

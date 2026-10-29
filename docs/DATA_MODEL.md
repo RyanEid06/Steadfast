@@ -1,70 +1,51 @@
-# Data Model
+# Data model
 
-Names are conceptual; Gemini may adjust Kotlin naming while preserving semantics.
+Persisted entity and preference definitions live in `app/src/main/java/com/steadfast/app/data/`.
 
-## Room entities
+## Room (`steadfast.db`, schema version 1)
 
-### `StreakSessionEntity`
+### `streak_sessions`
 
-- `id: Long` primary key
-- `recoveryFocusId: String`
-- `startEpochMillis: Long`
-- `startZoneId: String`
-- `endEpochMillis: Long?` — null means active
-- `createdAtEpochMillis: Long`
+`StreakSessionEntity` fields:
 
-Invariant: exactly one active session after onboarding.
+- `id: Long` — auto-generated primary key.
+- `recoveryFocusId: String`.
+- `startEpochMillis: Long` and `startZoneId: String` — the starting instant and its zone.
+- `endEpochMillis: Long?` — null denotes an active session.
+- `createdAtEpochMillis: Long`.
 
-### `JournalEntryEntity`
+Restart archives the prior active session and creates another. Repository validation allows at most one active session and rejects future, inverted, or overlapping chronology. A restart note, when supplied, is a journal entry linked to the archived session.
 
-- `id: Long` primary key
-- `createdAtEpochMillis: Long` indexed
-- `updatedAtEpochMillis: Long`
-- `body: String`
-- `context: String?` (`GENERAL`, `RESTART`, `URGE`) optional
-- `streakSessionId: Long?` optional link
+### `journal_entries`
 
-### `BibleChapterCompletionEntity`
+`JournalEntryEntity` fields: auto-generated `id: Long`, `createdAtEpochMillis: Long`, `updatedAtEpochMillis: Long`, `body: String`, optional `context: String?` (`GENERAL`, `RESTART`, or `URGE`), and optional `streakSessionId: Long?`. Creation time is indexed; lists are ordered newest first.
 
-Store completed rows only:
+### `bible_chapter_completions`
 
-- `bookId: Int`
-- `chapter: Int`
-- composite primary key `(bookId, chapter)`
+`BibleChapterCompletionEntity` stores `bookId: Int` and `chapter: Int` as a composite primary key. Only completed chapters have rows. Repository checks book, chapter, and testament bounds. Book and testament progress are derived from the bundled 66-book catalog.
 
-Absence means unread. Do not store completion timestamp in V1.
+## Preferences DataStore (`steadfast_settings`)
 
-## DataStore settings
+User settings are stored as preference keys and read together by `snapshotUserSettings` for backup:
 
-- `onboardingComplete: Boolean`
-- `themeMode: SYSTEM | DARK | LIGHT`
-- `appLockEnabled: Boolean`
-- `recoveryFocusId: String`
-- `readingGoalMinimum: Int` in `1..5`
-- `oldTestamentCurrentBookId: Int?`
-- `oldTestamentCurrentChapter: Int?`
-- `newTestamentCurrentBookId: Int?`
-- `newTestamentCurrentChapter: Int?`
-- `shownMilestoneCelebrations: Set<String>` scoped to active session, or equivalent persisted mapping
-- tutorial/version flags as required
+- `onboardingComplete: Boolean` (defaults to false in normal startup settings).
+- `themeMode: SYSTEM | DARK | LIGHT`.
+- `appLockEnabled: Boolean`.
+- `recoveryFocusId: String` (default `pornography`).
+- `readingGoalMinimum: Int` in **1..5** (default 2). It is a motivational target; completion is not tracked daily.
+- `oldTestamentCurrent` and `newTestamentCurrent`: optional `{ bookId, chapter }` bookmarks, each validated against its testament.
+- `shownMilestones: Set<String>`: milestone IDs already celebrated for the current streak session. The set is cleared when a session begins or restarts.
+- `lastBackgroundEpoch: Long`: device-local app-lock timing state; excluded from portable backup.
 
-## Seed/static models
+## Bundled catalog models
 
-- `BibleBook`: see `data/bible_books.json`
-- `RecoveryFocus`: see `data/recovery_focuses.json`
-- `MilestoneDefinition`: see `data/milestones.json`
-- `VerseReference`: see `data/verse_reference_catalog_starter.json`
+`AssetSeedLoader` reads these JSON assets into models defined in `data/model/SeedModels.kt`:
+
+- Bible books and chapter counts (`bible_books.json`).
+- Recovery focus IDs and labels (`recovery_focuses.json`).
+- Milestone IDs, kinds, values, and titles (`milestones.json`).
+- Verse-reference catalog and scale comparisons.
 
 ## Derived values
 
-Never persist values that can be derived safely:
-
-- current streak duration
-- longest streak duration
-- book completion percentage
-- testament completion percentage
-- whole-Bible completion percentage
-- total completed books
-- milestone current/next state
-
-This prevents drift and stale values.
+Streak duration, longest streak, milestone achievement/next target, chapter/book/testament/Bible completion percentages, and completed-book count are derived from persisted rows, preferences, and bundled definitions; they are not separate persisted fields.

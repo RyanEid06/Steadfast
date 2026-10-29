@@ -1,48 +1,33 @@
-# Frozen Decisions Log
+# Product and design decisions
+
+This log records the current frozen V1 direction. Implementation details are in [Architecture](ARCHITECTURE.md).
+
+## Product
 
 - Product name: **Steadfast**.
-- Equal recovery + Bible focus.
-- Supports multiple predefined recovery focuses; not porn-only.
-- Offline/local-only; no accounts/cloud.
-- Biometric/device credential lock.
-- Exact streak date + time.
-- Dashboard timer updates every second while visible.
-- Main timer progressively adds months after 30 days and years after 1 year.
-- Calendar-accurate months/years.
-- Milestones: 1/3/7/14/21/30/60/90 days; 3/6/9 months; 1 year.
-- Restart history preserved; chart uses streak history.
-- Only current + longest streak as headline stats.
-- Full personal journal.
-- “I’m struggling” tool prioritizes Scripture from completed chapters.
-- No mandatory daily check-in.
-- No notifications.
-- Home-screen widget included.
-- Bottom destinations: Dashboard / Journey / Bible. Settings is not bottom nav.
-- Bible text is not embedded wholesale in V1 until rights are resolved.
-- 66-book Protestant canon.
-- Chapter completion + book progress + OT/NT/whole progress.
-- Max two current-reading pointers: one OT, one NT.
-- No Bible streak.
-- Reading target 1–5+, motivational only in V1.
-- Dark + light + system theme.
-- Mature cinematic cross/mountain visual direction.
-- Smooth professional motion; not cartoonish.
-- English only V1.
-- Hard-coded recovery focus list.
-- No erase-all-data button.
-- Screenshots allowed.
-- Kotlin + Jetpack Compose architecture.
-- Modern phones; minSdk 29 baseline.
-- Private APK first; Play Store not a goal.
-- Full feature set targeted for V1; V1.1+ mainly bug/polish releases.
+- Equal recovery and Bible focus, with multiple predefined recovery focuses.
+- Local, offline-first use; no accounts or cloud service.
+- No notifications and no mandatory daily check-in.
+- Preserve restart history; show current and longest streak as headline statistics.
+- Exact streak date and time, with elapsed duration plus calendar-accurate months/years based on the stored start zone.
+- Milestones: 1, 3, 7, 14, 21, 30, 60, and 90 elapsed days; 3, 6, and 9 calendar months; and 1 calendar year.
+- Full personal journal. The “I’m struggling” flow prioritizes Scripture references from completed chapters when available.
+- Bible tracking uses the 66-book Protestant canon, chapter completion, book/testament/whole-Bible progress, and at most one current-reading bookmark per testament. No Bible streak.
+- Bible text is not embedded wholesale until rights are resolved.
+- Reading goal is a motivational minimum of **1–5 chapters**, not a measured daily completion metric.
+- System, dark, and light themes.
+- App lock uses Android biometrics/device credentials; no custom in-app PIN.
+- Home-screen widget is included.
+- English for V1; modern Android phones with API 29 minimum.
+- Private APK testing comes before any public release decision; Play Store publication is not a V1 goal.
 
-## Hybrid visual freeze — 2026-10-27
+## Navigation and visual direction
 
-- Style 1 is the primary layout/identity reference.
-- Launcher icon follows Style 1.
-- Dashboard follows Style 1, specifically the circular current-streak presentation.
-- Onboarding/tutorial follows Style 1.
-- Journal follows Style 2.
-- Book Detail/chapter grid follows Style 3.
-- Dark/light palette follows Style 3 across the entire app.
-- Where not explicitly overridden, use Style 1 structure with Style 3 colors.
+- Bottom destinations: Dashboard, Journey, and Bible. Settings is not a bottom destination.
+- Mature cinematic cross/mountain visual direction; smooth, restrained motion and no cartoon styling.
+- Hybrid visual freeze (2026-10-27): Style 1 is the primary layout and identity; Style 1 launcher icon, Dashboard, onboarding, and tutorial; Style 2 Journal; Style 3 Book Detail/chapter grid and app-wide dark/light palette. Elsewhere, use Style 1 structure with Style 3 colors.
+
+## Explicit exclusions
+
+- No cloud/account feature, notifications, Bible streak, erase-all-data button, or telemetry dependency.
+- No separate OT and NT daily goals; the single reading target is a motivational setting.

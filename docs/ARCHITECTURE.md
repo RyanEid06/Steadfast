@@ -1,91 +1,51 @@
-# Technical Architecture
+# Technical architecture
 
-## Stack
+## Application
 
-- Kotlin
-- Jetpack Compose + Material 3 primitives with a custom Steadfast theme
-- Single-activity architecture
-- Navigation Compose
-- Room for relational/persistent user data
-- DataStore Preferences for small settings/onboarding state
-- AndroidX Biometric for biometric/device-credential lock
-- Kotlin coroutines + Flow
-- ViewModel + immutable UI state
-- AppWidget: Jetpack Glance if stable/compatible at implementation time; otherwise standard AppWidget APIs
-- Local JSON assets for Bible structure, recovery focuses, milestone definitions, and verse metadata
+- Android app, Kotlin, one `MainActivity`, Jetpack Compose and Material 3.
+- Namespace and application ID: `com.steadfast.app`; minimum Android API 29.
+- Navigation Compose provides Dashboard, Journey, and Bible destinations. Settings is opened from the app UI, not a bottom destination.
+- Room stores streak sessions, journal entries, and completed Bible chapters. Preferences DataStore stores user settings and reading bookmarks.
+- AndroidX BiometricPrompt handles system biometrics/device credentials. Moshi reads bundled JSON catalogs and backup payloads.
+- The manifest disables Android auto backup and declares no `INTERNET` permission.
+- The home-screen widget is an `AppWidgetProvider` using platform `RemoteViews` and an XML layout; it is not implemented with Glance.
 
-Use current stable versions available when implementation begins. Avoid speculative dependencies.
+## Current source layout
 
-## Recommended package structure
-
-```
-com.steadfast.app
-  core/
-    design/
-    time/
-    security/
-    backup/
-    util/
-  data/
-    db/
-    dao/
-    entity/
-    repository/
-    seed/
-  domain/
-    model/
-    usecase/
-  feature/
-    onboarding/
-    dashboard/
-    journey/
-    journal/
-    milestones/
-    bible/
-    struggling/
-    settings/
-  widget/
+```text
+com.steadfast.app/
+  MainActivity.kt                 startup gates, dependencies, app navigation
+  core/accessibility/             reduced-motion helpers
+  core/design/                    shared design behavior
+  core/security/                  app lock and encrypted backup/restore
+  core/time/                      streak arithmetic and foreground UI clock
+  data/datastore/                 user settings and bookmarks
+  data/db/                        Room database and DAOs
+  data/model/                     persisted and bundled-data models
+  data/repository/                streak, journal, Bible, verse, milestone data
+  data/seed/                      bundled JSON loading
+  ui/                             Compose screens and theme
+  widget/                         standard Android app widget
 ```
 
-## State rules
+This is the implemented structure; there are no separate `domain`, `feature`, `backup`, or `dao` package scaffolds.
 
-- Room is the source of truth for streak sessions, journal, and Bible completion.
-- DataStore is source of truth for theme, lock toggle, onboarding completion, reading target, currently-reading pointers, and last-seen celebration IDs where practical.
-- UI collects flows lifecycle-aware.
-- Dashboard's second ticker is in-memory and scoped to the visible lifecycle. It must not write to DB and must not trigger a DB query each tick.
+## Data flow and startup
 
-## Time model
+Repositories expose Room and DataStore values as Flows. Compose screens collect those values; UI-only values such as timer ticks remain in memory. Room is authoritative for streak history, journal entries, and Bible completion. DataStore is authoritative for theme, recovery focus, app-lock preference, onboarding completion, reading goal, OT/NT bookmarks, shown milestone IDs, and the device-local last-background time.
 
-Persist:
+At process start, `BackupManager` reconciles any interrupted restore before `MainActivity` composes protected content. The app then reads the coherent restored lock preference. If restore recovery is not ready, or if enabled authentication has not succeeded, personal content stays hidden. Authenticated session state is retained for activity configuration changes only and never across process death.
 
-- `startEpochMillis`
-- `startZoneId`
-- `endEpochMillis` for archived streaks
+## Streak time and milestone behavior
 
-For elapsed seconds/minutes/hours use exact duration between instants.
+`StreakSessionEntity` persists the start instant and its IANA zone ID. `StreakDurationCalculator` derives elapsed totals from instants and calendar years/months/days in the stored zone. `rememberForegroundTimeMillis` updates while the Compose lifecycle is `RESUMED`; Dashboard recalculates from that in-memory clock, without a Room write or per-second database query.
 
-For calendar years/months/days in the primary display, compute using the stored start zone so changing device timezone does not make the streak visually jump by a calendar day. Then derive remaining hours/seconds from the exact instant difference consistently.
+Milestone definitions are loaded from `app/src/main/assets/milestones.json`. Day milestones use whole elapsed days; month and year milestones use calendar units from the streak duration. The ordered first unachieved milestone is the next target. Celebrated milestone IDs are stored in DataStore and cleared when an initial or restarted session begins. Celebration selection is the highest achieved milestone whose ID is not yet recorded as shown.
 
-Test leap years, DST transitions, month-end starts, and timezone changes.
+## Bundled data
 
-## Performance
+`AssetSeedLoader` reads Bible-book structure, recovery-focus options, milestone definitions, verse-reference catalogs, and scale comparisons from app assets. Bible text itself is looked up by exact reference from the bundled WEB data; the UI can fall back to showing the reference when text is unavailable.
 
-- Never scan all Bible chapters to compute every UI label on every recomposition. Use query/aggregate flows or efficient in-memory derived state.
-- Journal uses indexed timestamp ordering.
-- Streak history chart derives when the session list changes, not every frame.
-- Seed assets load once and are cached/repository-backed.
-- No artificial loading spinner for local synchronous/fast operations.
-- Avoid storing second-by-second streak values; store timestamps and derive.
+## Checks
 
-## Testing
-
-At minimum:
-
-- Unit tests for streak/calendar calculations
-- Unit tests for milestone detection
-- Room DAO tests
-- Backup round-trip tests
-- Bible progress percentage tests
-- ViewModel tests for restart and chapter toggle
-- UI smoke tests for onboarding/navigation
-- Widget state test where practical
+The project has JVM/Robolectric and Android instrumentation suites, plus Gradle lint and debug/release assembly tasks. See [Acceptance tests](ACCEPTANCE_TESTS.md) for the checklist and the evidence observed for this reconciliation.

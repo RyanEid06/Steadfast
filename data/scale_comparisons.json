@@ -3,168 +3,168 @@
     "id": "sc_1",
     "thresholdDays": 1,
     "title": "24 Hours of Freedom",
-    "description": "1,440 consecutive minutes of intentional resolve. During this time, the Earth completed one full rotation of approximately 40,075 kilometers beneath your feet.",
-    "scriptureReference": "Zechariah 4:10 — 'Do not despise these small beginnings, for the Lord rejoices to see the work begin.'",
-    "sourceNote": "Planetary rotational constant: Earth equatorial circumference = 40,075.017 km (WGS 84 ellipsoid / NASA Earth Fact Sheet)."
+    "description": "1 elapsed day equals 24 hours, or 1,440 minutes.",
+    "scriptureReference": "Zechariah 4:10",
+    "sourceNote": "Duration arithmetic: 1 elapsed 24-hour day = 24 hours = 1,440 minutes."
   },
   {
     "id": "sc_2",
     "thresholdDays": 2,
-    "title": "48 Hours of Endurance",
-    "description": "2,880 minutes of steadfastness. You have navigated two full cycles of day and night in conscious self-mastery.",
-    "scriptureReference": "Psalm 118:24 — 'This is the day the Lord has made; we will rejoice and be glad in it.'",
-    "sourceNote": "Diurnal cycle arithmetic: 2 standard 24-hour mean solar days = 48 hours = 2,880 minutes."
+    "title": "Two Days of Endurance",
+    "description": "2 elapsed days equal 48 hours, or 2,880 minutes.",
+    "scriptureReference": "Psalm 118:24",
+    "sourceNote": "Duration arithmetic: 2 x 24 hours = 48 hours = 2,880 minutes."
   },
   {
     "id": "sc_3",
     "thresholdDays": 3,
-    "title": "Three Days of Restoration",
-    "description": "72 hours of renewal. In Scripture, three days often marks the turning point from affliction to resurrection morning.",
-    "scriptureReference": "Hosea 6:2 — 'After two days he will revive us; on the third day he will restore us, that we may live in his presence.'",
-    "sourceNote": "Biblical motif & duration arithmetic: Hosea 6:2 / Jonah 1:17 / Matthew 16:21. 72 continuous hours."
+    "title": "Three Days of Perseverance",
+    "description": "3 elapsed days equal 72 hours, or 4,320 minutes.",
+    "scriptureReference": "Hosea 6:2",
+    "sourceNote": "Duration arithmetic: 3 x 24 hours = 72 hours = 4,320 minutes."
   },
   {
     "id": "sc_5",
     "thresholdDays": 5,
-    "title": "A Standard Work Week",
-    "description": "120 continuous hours. Equivalent to the total active hours in a traditional business week, all dedicated to discipline and prayer.",
-    "scriptureReference": "Proverbs 16:3 — 'Commit your work to the Lord, and your plans will be established.'",
-    "sourceNote": "Standard 5-day workweek span: 5 consecutive 24-hour periods = 120 hours (ISO 8601 calendar days)."
+    "title": "A Five-Day Stretch",
+    "description": "5 elapsed days equal 120 hours, or 7,200 minutes. That is one five-day span, measured continuously.",
+    "scriptureReference": "Proverbs 16:3",
+    "sourceNote": "Duration arithmetic: 5 x 24 hours = 120 hours = 7,200 minutes."
   },
   {
     "id": "sc_7",
     "thresholdDays": 7,
-    "title": "One Full Sabbath Cycle",
-    "description": "168 unbroken hours. God created the heavens and the earth and rested on the seventh day. You have completed your first full biblical week of freedom.",
-    "scriptureReference": "Genesis 2:3 — 'And God blessed the seventh day and declared it holy, because on it he rested from all his work.'",
-    "sourceNote": "Creation week cycle: Genesis 2:1-3, Exodus 20:8-11. 7 consecutive 24-hour days = 168 hours."
+    "title": "One Full Week",
+    "description": "7 elapsed days equal 168 hours, or 10,080 minutes: one sequence of seven 24-hour days.",
+    "scriptureReference": "Genesis 2:1-3",
+    "sourceNote": "Duration arithmetic: 7 x 24 hours = 168 hours = 10,080 minutes. The title references the seven-day motif in Genesis 2:1-3."
   },
   {
     "id": "sc_10",
     "thresholdDays": 10,
-    "title": "The Ten-Day Trial of Daniel",
-    "description": "240 hours. In Babylon, Daniel and his companions chose a 10-day period of disciplined devotion, emerging stronger and clearer in spirit.",
-    "scriptureReference": "Daniel 1:12-14 — 'Test your servants for ten days... and at the end of ten days their faces appeared fairer.'",
-    "sourceNote": "Danielic devotion milestone: Daniel 1:12-15. 10 elapsed days = 240 hours."
+    "title": "Daniel's Ten-Day Test",
+    "description": "10 elapsed days equal 240 hours, or 14,400 minutes.",
+    "scriptureReference": "Daniel 1:12-15",
+    "sourceNote": "Duration arithmetic: 10 x 24 hours = 240 hours = 14,400 minutes. The title references Daniel 1:12-15."
   },
   {
     "id": "sc_14",
     "thresholdDays": 14,
-    "title": "A Fortnight of Perseverance",
-    "description": "336 hours. Half of a lunar synodic cycle. Two full weeks of resisting impulse and walking with patient perseverance.",
-    "scriptureReference": "Psalm 31:24 — 'Be of good courage, and He shall strengthen your heart, all you who hope in the Lord.'",
-    "sourceNote": "Lunar phase duration: Half of mean synodic lunar month (29.53 days / 2 = 14.77 days; NASA Moon Fact Sheet). 14 days = 336 hours."
+    "title": "Two Weeks of Perseverance",
+    "description": "14 elapsed days equal 336 hours, or 20,160 minutes: exactly two seven-day weeks.",
+    "scriptureReference": "Psalm 31:24",
+    "sourceNote": "Duration arithmetic: 14 x 24 hours = 336 hours = 20,160 minutes; 14 days = 2 x 7 days."
   },
   {
     "id": "sc_21",
     "thresholdDays": 21,
-    "title": "The Fast of Daniel",
-    "description": "504 hours. Daniel dedicated three full weeks to prayer and fasting beside the Tigris River before God's messenger ministered to him.",
-    "scriptureReference": "Daniel 10:2 — 'In those days I, Daniel, was mourning three full weeks.'",
-    "sourceNote": "Biblical petition milestone: Daniel 10:2-3. 3 full calendar weeks = 21 elapsed days = 504 hours."
+    "title": "Three Weeks of Steadfastness",
+    "description": "21 elapsed days equal 504 hours, or 30,240 minutes: exactly three seven-day weeks.",
+    "scriptureReference": "Daniel 10:2-3",
+    "sourceNote": "Duration arithmetic: 21 x 24 hours = 504 hours = 30,240 minutes; 21 days = 3 x 7 days. Daniel 10:2-3 is a three-week motif."
   },
   {
     "id": "sc_30",
     "thresholdDays": 30,
-    "title": "One Full Lunar Month",
-    "description": "720 hours — 43,200 minutes. The moon has completed its full orbital cycle from new moon to crescent, full illumination, and back.",
-    "scriptureReference": "Lamentations 3:22-23 — 'The faithful love of the Lord never ends! His mercies never cease. Great is his faithfulness; his mercies begin afresh each morning.'",
-    "sourceNote": "Astronomical synodic month: Mean lunar phase cycle = 29.53059 days (NASA Goddard Moon Fact Sheet)."
+    "title": "Thirty Days of Steadfastness",
+    "description": "30 elapsed days equal 720 hours, or 43,200 minutes.",
+    "scriptureReference": "Lamentations 3:22-23",
+    "sourceNote": "Duration arithmetic: 30 x 24 hours = 720 hours = 43,200 minutes."
   },
   {
     "id": "sc_40",
     "thresholdDays": 40,
     "title": "The Biblical Forty Days",
-    "description": "960 hours. Forty days is Scripture's recurring milestone for testing and spiritual maturity: Jesus in the wilderness, Moses on Sinai, and Elijah journeying to Horeb.",
-    "scriptureReference": "Matthew 4:1-2 — 'Then Jesus was led by the Spirit into the wilderness... After fasting forty days and forty nights, he was hungry.'",
-    "sourceNote": "Scripture purification & testing motif: Exodus 34:28, 1 Kings 19:8, Matthew 4:1-2. 40 days = 960 hours."
+    "description": "40 elapsed days equal 960 hours, or 57,600 minutes. The title reflects forty-day periods referenced in Scripture.",
+    "scriptureReference": "Matthew 4:1-2; Exodus 34:28; 1 Kings 19:8",
+    "sourceNote": "Duration arithmetic: 40 x 24 hours = 960 hours = 57,600 minutes. Forty-day references: Matthew 4:1-2, Exodus 34:28, and 1 Kings 19:8."
   },
   {
     "id": "sc_50",
     "thresholdDays": 50,
-    "title": "The Pentecost Interval",
-    "description": "1,200 hours. The exact span from Passover to the Feast of Weeks (Pentecost), commemorating God giving the Law and the outpouring of the Holy Spirit.",
-    "scriptureReference": "Acts 2:1 — 'When the day of Pentecost had fully come, they were all together in one place.'",
-    "sourceNote": "Levitical & New Testament calendar interval: 50 days (Leviticus 23:15-16, Acts 2:1). 1,200 hours."
+    "title": "The Pentecost Count",
+    "description": "50 elapsed days equal 1,200 hours, or 72,000 minutes. The title refers to the count described in Leviticus 23:15-16.",
+    "scriptureReference": "Leviticus 23:15-16; Acts 2:1",
+    "sourceNote": "Duration arithmetic: 50 x 24 hours = 1,200 hours = 72,000 minutes. Leviticus 23:15-16 describes a count of fifty days."
   },
   {
     "id": "sc_60",
     "thresholdDays": 60,
-    "title": "Two Full Months",
-    "description": "1,440 hours — 86,400 minutes won back. Your daily routine has steadily shifted toward prayer, Scripture, and peace.",
-    "scriptureReference": "Jeremiah 17:8 — 'They are like trees planted along a riverbank, with roots that reach deep into the water.'",
-    "sourceNote": "Calendar duration arithmetic: 60 standard days = 1,440 hours = 86,400 minutes."
+    "title": "Sixty Days of Steadfastness",
+    "description": "60 elapsed days equal 1,440 hours, or 86,400 minutes.",
+    "scriptureReference": "Jeremiah 17:7-8",
+    "sourceNote": "Duration arithmetic: 60 x 24 hours = 1,440 hours = 86,400 minutes."
   },
   {
     "id": "sc_75",
     "thresholdDays": 75,
-    "title": "Surpassing Historic Voyages",
-    "description": "1,800 hours. In 1620, the historic Mayflower voyage across the stormy North Atlantic took 66 days. You have surpassed that entire transatlantic voyage in quiet perseverance.",
-    "scriptureReference": "Psalm 107:29-30 — 'He calmed the storm to a whisper... and he brought them to their desired haven.'",
-    "sourceNote": "Historical maritime voyage: Mayflower Atlantic crossing (Sept 6 – Nov 9, 1620 O.S., 66 days; William Bradford, 'Of Plymouth Plantation'). 75 days = 1,800 hours."
+    "title": "Seventy-Five Days of Perseverance",
+    "description": "75 elapsed days equal 1,800 hours, or 108,000 minutes.",
+    "scriptureReference": "Psalm 107:29-30",
+    "sourceNote": "Duration arithmetic: 75 x 24 hours = 1,800 hours = 108,000 minutes."
   },
   {
     "id": "sc_90",
     "thresholdDays": 90,
-    "title": "A Complete Astronomical Season",
-    "description": "2,160 hours — 129,600 minutes. One quarter of the calendar year. The earth has traversed 90 degrees around its orbit, transforming the season.",
-    "scriptureReference": "Ecclesiastes 3:1 — 'For everything there is a season, a time for every activity under heaven.'",
-    "sourceNote": "Astronomical orbital quadrant: Mean season duration is 89-93 days; ~90 degrees orbital transit (US Naval Observatory Astronomical Almanac)."
+    "title": "Ninety Days of Steadfastness",
+    "description": "90 elapsed days equal 2,160 hours, or 129,600 minutes.",
+    "scriptureReference": "Ecclesiastes 3:1",
+    "sourceNote": "Duration arithmetic: 90 x 24 hours = 2,160 hours = 129,600 minutes."
   },
   {
     "id": "sc_120",
     "thresholdDays": 120,
-    "title": "One Third of a Year",
-    "description": "2,880 hours — four complete calendar months. Over 170,000 minutes of daily intentional surrender.",
-    "scriptureReference": "Colossians 2:6-7 — 'Just as you accepted Christ Jesus as your Lord, you must continue to follow him. Let your roots grow down into him.'",
-    "sourceNote": "Solar year division: 120 days = 2,880 hours = 172,800 minutes (1/3 of 360-365 day cycle)."
+    "title": "One Hundred and Twenty Days",
+    "description": "120 elapsed days equal 2,880 hours, or 172,800 minutes.",
+    "scriptureReference": "Colossians 2:6-7",
+    "sourceNote": "Duration arithmetic: 120 x 24 hours = 2,880 hours = 172,800 minutes."
   },
   {
     "id": "sc_150",
     "thresholdDays": 150,
-    "title": "Waters of the Ark Receding",
-    "description": "3,600 hours. In Genesis, the flood waters prevailed upon the earth for 150 days before the ark came to rest on the mountains of Ararat and a new chapter began.",
-    "scriptureReference": "Genesis 8:3 — 'The water receded steadily from the earth. At the end of the hundred and fifty days the water had gone down.'",
-    "sourceNote": "Genesis chronicle milestone: Genesis 7:24, 8:3. 150 days = 3,600 hours."
+    "title": "The One Hundred and Fifty-Day Account",
+    "description": "150 elapsed days equal 3,600 hours, or 216,000 minutes. The title references the duration stated in Genesis 7:24 and 8:3.",
+    "scriptureReference": "Genesis 7:24; Genesis 8:3",
+    "sourceNote": "Duration arithmetic: 150 x 24 hours = 3,600 hours = 216,000 minutes. Genesis 7:24 and 8:3 provide the scriptural motif."
   },
   {
     "id": "sc_180",
     "thresholdDays": 180,
-    "title": "Half a Year of Grace",
-    "description": "4,320 hours — 259,200 minutes. Six full months. Half the globe's annual cycle completed in freedom.",
-    "scriptureReference": "2 Corinthians 5:17 — 'This means that anyone who belongs to Christ has become a new person. The old life is gone; a new life has begun!'",
-    "sourceNote": "Calendar orbital geometry: 180 days = 180 degrees orbital transit around the Sun = 4,320 hours."
+    "title": "One Hundred and Eighty Days",
+    "description": "180 elapsed days equal 4,320 hours, or 259,200 minutes.",
+    "scriptureReference": "2 Corinthians 5:17",
+    "sourceNote": "Duration arithmetic: 180 x 24 hours = 4,320 hours = 259,200 minutes."
   },
   {
     "id": "sc_270",
     "thresholdDays": 270,
-    "title": "The Span of New Life",
-    "description": "6,480 hours — nine months. Equivalent to the full human gestation period, where life is quietly formed in secret by God's hand.",
-    "scriptureReference": "Psalm 139:13 — 'You made all the delicate, inner parts of my body and knit me together in my mother’s womb.'",
-    "sourceNote": "Human biological gestation: Average term pregnancy duration is 38-40 weeks = 266-280 days (American College of Obstetricians and Gynecologists / ACOG clinical guidelines)."
+    "title": "Two Hundred and Seventy Days",
+    "description": "270 elapsed days equal 6,480 hours, or 388,800 minutes.",
+    "scriptureReference": "Psalm 139:13-16",
+    "sourceNote": "Duration arithmetic: 270 x 24 hours = 6,480 hours = 388,800 minutes."
   },
   {
     "id": "sc_365",
     "thresholdDays": 365,
-    "title": "One Full Solar Orbit",
-    "description": "8,760 hours — 525,600 minutes. The earth has traveled approximately 940 million kilometers around the Sun. An entire year lived in steadfast victory.",
-    "scriptureReference": "Psalm 65:11 — 'You crown the year with your goodness, and your paths overflow with abundance.'",
-    "sourceNote": "Earth orbital trajectory: 1 tropical year = 365.2422 days; orbital circumference = 940 million km (NASA Earth Fact Sheet)."
+    "title": "Three Hundred and Sixty-Five Days",
+    "description": "365 elapsed days equal 8,760 hours, or 525,600 minutes: 52 weeks plus one day.",
+    "scriptureReference": "Psalm 65:11",
+    "sourceNote": "Duration arithmetic: 365 x 24 hours = 8,760 hours = 525,600 minutes; 365 days = 52 x 7 days + 1 day."
   },
   {
     "id": "sc_500",
     "thresholdDays": 500,
     "title": "Five Hundred Days",
-    "description": "12,000 hours — 720,000 minutes. A rare landmark of mature spiritual discipline and enduring character.",
-    "scriptureReference": "Galatians 6:9 — 'Let us not become weary in doing good, for at the proper time we will reap a harvest if we do not give up.'",
-    "sourceNote": "Milestone duration arithmetic: 500 standard 24-hour days = 12,000 hours = 720,000 minutes."
+    "description": "500 elapsed days equal 12,000 hours, or 720,000 minutes.",
+    "scriptureReference": "Galatians 6:9",
+    "sourceNote": "Duration arithmetic: 500 x 24 hours = 12,000 hours = 720,000 minutes."
   },
   {
     "id": "sc_730",
     "thresholdDays": 730,
-    "title": "Two Full Calendar Years",
-    "description": "17,520 hours — over one million minutes of sustained clarity and God-given freedom.",
-    "scriptureReference": "2 Timothy 4:7 — 'I have fought the good fight, I have finished the race, I have kept the faith.'",
-    "sourceNote": "Biennial duration arithmetic: 2 standard 365-day solar calendar years = 730 days = 17,520 hours."
+    "title": "Two 365-Day Spans",
+    "description": "730 elapsed days equal 17,520 hours, or 1,051,200 minutes: two spans of 365 days each.",
+    "scriptureReference": "2 Timothy 4:7",
+    "sourceNote": "Duration arithmetic: 730 x 24 hours = 17,520 hours = 1,051,200 minutes; 730 days = 2 x 365 days."
   }
 ]
