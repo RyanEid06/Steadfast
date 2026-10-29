@@ -1,6 +1,6 @@
 # Steadfast reconciliation and packaging report
 
-Updated 2026-10-29. This report consolidates the former subsystem/review checkpoints; the current implementation and contracts are described in [Architecture](ARCHITECTURE.md), [Data model](DATA_MODEL.md), [Security and backup](SECURITY_BACKUP.md), and [Acceptance tests](ACCEPTANCE_TESTS.md).
+Updated 2026-10-29. Reconciled implementation published to GitHub `main` as [`e7cb984`](https://github.com/RyanEid06/Steadfast/commit/e7cb98451b6332f6eba8096cf23d9ad15e4b2cad). This report consolidates the former subsystem/review checkpoints; the current implementation and contracts are described in [Architecture](ARCHITECTURE.md), [Data model](DATA_MODEL.md), [Security and backup](SECURITY_BACKUP.md), and [Acceptance tests](ACCEPTANCE_TESTS.md).
 
 ## Base and result
 
