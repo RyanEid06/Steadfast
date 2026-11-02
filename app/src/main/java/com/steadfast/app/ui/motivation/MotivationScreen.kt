@@ -31,9 +31,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.steadfast.app.core.time.StreakDurationCalculator
+import com.steadfast.app.core.time.rememberForegroundBoundaryTimeMillis
+import com.steadfast.app.core.time.rememberForegroundTimeMillis
 import com.steadfast.app.data.model.ScaleComparison
 import com.steadfast.app.data.model.StreakSessionEntity
-import com.steadfast.app.ui.theme.SteadfastGold
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -44,7 +45,11 @@ fun MotivationScreen(
     onBackClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val now = com.steadfast.app.core.time.rememberForegroundTimeMillis(activeSession != null)
+    val now = rememberForegroundBoundaryTimeMillis(
+        activeSession?.startEpochMillis,
+        activeSession?.startZoneId,
+        enabled = activeSession != null
+    )
     val duration = remember(activeSession, now) {
         if (activeSession != null) {
             StreakDurationCalculator.calculate(
@@ -56,8 +61,6 @@ fun MotivationScreen(
             StreakDurationCalculator.calculate(now, "UTC", now)
         }
     }
-
-    val numberFormat = remember { NumberFormat.getNumberInstance(Locale.US) }
 
     Column(
         modifier = modifier
@@ -102,31 +105,12 @@ fun MotivationScreen(
                 Text(
                     text = "TOTAL TIME WON BACK",
                     style = MaterialTheme.typography.labelSmall,
-                    color = SteadfastGold,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
                 )
                 Spacer(modifier = Modifier.height(10.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    MetricCard(
-                        title = "Hours",
-                        value = numberFormat.format(duration.totalHours),
-                        modifier = Modifier.weight(1f)
-                    )
-                    MetricCard(
-                        title = "Minutes",
-                        value = numberFormat.format(duration.totalMinutes),
-                        modifier = Modifier.weight(1f)
-                    )
-                    MetricCard(
-                        title = "Seconds",
-                        value = numberFormat.format(duration.totalSeconds),
-                        modifier = Modifier.weight(1.1f)
-                    )
-                }
+                MotivationLiveTime(activeSession)
             }
 
             // Biblical & Spiritual Scale Comparisons
@@ -135,7 +119,7 @@ fun MotivationScreen(
                 Text(
                     text = "TIME & SCRIPTURE COMPARISONS",
                     style = MaterialTheme.typography.labelSmall,
-                    color = SteadfastGold,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
                 )
             }
@@ -160,12 +144,12 @@ fun MotivationScreen(
                                 text = comp.title,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isUnlocked) SteadfastGold else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (isUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
                                 text = "${comp.thresholdDays}d",
                                 style = MaterialTheme.typography.labelMedium,
-                                color = if (isUnlocked) SteadfastGold else MaterialTheme.colorScheme.outlineVariant
+                                color = if (isUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
                             )
                         }
 
@@ -198,6 +182,23 @@ fun MotivationScreen(
 }
 
 @Composable
+private fun MotivationLiveTime(activeSession: StreakSessionEntity?) {
+    val now = rememberForegroundTimeMillis(activeSession != null)
+    val duration = remember(activeSession, now) {
+        activeSession?.let {
+            StreakDurationCalculator.calculate(it.startEpochMillis, it.startZoneId, now)
+        } ?: StreakDurationCalculator.calculate(now, "UTC", now)
+    }
+    val numberFormat = remember { NumberFormat.getNumberInstance(Locale.US) }
+
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        MetricCard(title = "Hours", value = numberFormat.format(duration.totalHours), modifier = Modifier.weight(1f))
+        MetricCard(title = "Minutes", value = numberFormat.format(duration.totalMinutes), modifier = Modifier.weight(1f))
+        MetricCard(title = "Seconds", value = numberFormat.format(duration.totalSeconds), modifier = Modifier.weight(1.1f))
+    }
+}
+
+@Composable
 private fun MetricCard(title: String, value: String, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier,
@@ -218,7 +219,7 @@ private fun MetricCard(title: String, value: String, modifier: Modifier = Modifi
             Text(
                 text = title,
                 style = MaterialTheme.typography.labelSmall,
-                color = SteadfastGold
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }

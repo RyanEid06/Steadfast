@@ -10,15 +10,20 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -54,6 +59,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -68,6 +74,7 @@ import com.steadfast.app.ui.theme.SteadfastNavyDark
 import kotlinx.coroutines.launch
 
 @Composable
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 fun StrugglingInterventionScreen(
     verseRepository: VerseRepository,
     onTakeBreathingExercise: () -> Unit,
@@ -77,17 +84,19 @@ fun StrugglingInterventionScreen(
     modifier: Modifier = Modifier
 ) {
     val scope = rememberCoroutineScope()
+    val reducedMotion = com.steadfast.app.core.design.rememberReducedMotion()
     var currentVerse by remember { mutableStateOf<CuratedVerse?>(null) }
 
     LaunchedEffect(Unit) {
         currentVerse = verseRepository.getNextVerse()
     }
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF0D121D))
     ) {
+        val compactLayout = maxHeight <= 600.dp || LocalDensity.current.fontScale >= 1.5f
         // Atmospheric background hero
         Image(
             painter = painterResource(id = R.drawable.hero_struggling),
@@ -112,11 +121,13 @@ fun StrugglingInterventionScreen(
         )
 
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 14.dp),
+            modifier = (if (compactLayout) {
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+            } else {
+                Modifier.fillMaxSize()
+            }).padding(horizontal = 24.dp, vertical = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = if (compactLayout) Arrangement.Top else Arrangement.SpaceBetween
         ) {
             // Upper-left Back Action & Header
             Row(
@@ -144,7 +155,9 @@ fun StrugglingInterventionScreen(
                     style = MaterialTheme.typography.labelSmall,
                     letterSpacing = 1.5.sp,
                     color = SteadfastGold,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f)
                 )
 
                 IconButton(
@@ -185,13 +198,18 @@ fun StrugglingInterventionScreen(
             // Central Prominent Light/Cream Scripture Card with Dark Text
             AnimatedContent(
                 targetState = currentVerse,
-                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                transitionSpec = {
+                    if (reducedMotion) fadeIn(androidx.compose.animation.core.tween(0)) togetherWith fadeOut(androidx.compose.animation.core.tween(0))
+                    else fadeIn() togetherWith fadeOut()
+                },
                 label = "verse_animation",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f, fill = false)
+                    .then(if (compactLayout) Modifier else Modifier.weight(1f, fill = false))
             ) { verse ->
-                if (verse != null) {
+                if (verse == null) {
+                    Text("Loading Scripture…", color = Color.White, modifier = Modifier.padding(24.dp))
+                } else {
                     Card(
                         shape = RoundedCornerShape(22.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F5EE)),
@@ -204,10 +222,10 @@ fun StrugglingInterventionScreen(
                             modifier = Modifier.padding(22.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Row(
+                            FlowRow(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
@@ -265,7 +283,7 @@ fun StrugglingInterventionScreen(
                     onClick = onTakeBreathingExercise,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp)
+                        .heightIn(min = 50.dp)
                         .testTag("struggling_breathing_button"),
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -287,7 +305,7 @@ fun StrugglingInterventionScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
+                        .heightIn(min = 48.dp)
                         .testTag("struggling_another_verse_button"),
                     shape = RoundedCornerShape(14.dp),
                     border = BorderStroke(1.dp, SteadfastGold.copy(alpha = 0.6f))
@@ -302,7 +320,7 @@ fun StrugglingInterventionScreen(
                     onClick = onWriteNote,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
+                        .heightIn(min = 48.dp)
                         .testTag("struggling_write_note_button"),
                     shape = RoundedCornerShape(14.dp),
                     border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f))
@@ -317,7 +335,7 @@ fun StrugglingInterventionScreen(
                     onClick = onViewProgress,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
+                        .heightIn(min = 48.dp)
                         .testTag("struggling_view_progress_button"),
                     shape = RoundedCornerShape(14.dp),
                     border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f))
@@ -332,7 +350,7 @@ fun StrugglingInterventionScreen(
                     onClick = onClose,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
+                        .heightIn(min = 48.dp)
                 ) {
                     Text(
                         text = "I'm Grounded & Standing Firm Now",

@@ -19,7 +19,7 @@ val SteadfastCream = Color(0xFFF6F4ED)
 val SteadfastMutedText = Color(0xFF94A0B4)
 val SteadfastSubtleText = Color(0xFF5D687E)
 
-val SteadfastStrugglingDark = Color(0xFFC85A48)
+val SteadfastStrugglingDark = Color(0xFFD36956)
 val SteadfastStrugglingContainerDark = Color(0xFF2C1618)
 val SteadfastSuccessDark = Color(0xFF4E9E67)
 
@@ -30,7 +30,7 @@ val SteadfastLightSurfaceVariant = Color(0xFFEFE9DC)
 val SteadfastLightSurfaceElevated = Color(0xFFE6DECE)
 val SteadfastLightBorder = Color(0xFFDDD4C2)
 
-val SteadfastGoldLightMode = Color(0xFFA67C1E)
+val SteadfastGoldLightMode = Color(0xFF866213)
 val SteadfastGoldContainerLight = Color(0xFFF9F1DA)
 
 val SteadfastInk = Color(0xFF121620)

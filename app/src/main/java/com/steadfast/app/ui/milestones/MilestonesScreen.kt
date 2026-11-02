@@ -44,6 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.steadfast.app.core.time.StreakDurationCalculator
+import com.steadfast.app.core.time.rememberForegroundBoundaryTimeMillis
 import com.steadfast.app.data.model.MilestoneDefinition
 import com.steadfast.app.data.model.StreakSessionEntity
 import com.steadfast.app.data.repository.MilestoneRepository
@@ -58,7 +59,11 @@ fun MilestonesScreen(
     onBackClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val now = com.steadfast.app.core.time.rememberForegroundTimeMillis(activeSession != null)
+    val now = rememberForegroundBoundaryTimeMillis(
+        activeSession?.startEpochMillis,
+        activeSession?.startZoneId,
+        enabled = activeSession != null
+    )
     val duration = remember(activeSession, now) {
         if (activeSession != null) {
             StreakDurationCalculator.calculate(
@@ -116,7 +121,7 @@ fun MilestonesScreen(
                 Text(
                     text = "A PATH OF STEADFAST FAITH",
                     style = MaterialTheme.typography.labelSmall,
-                    color = SteadfastGold,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
@@ -169,7 +174,7 @@ private fun TimelineMilestoneRow(
                     Icon(
                         imageVector = Icons.Default.EmojiEvents,
                         contentDescription = "Next Target",
-                        tint = SteadfastGold,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp)
                     )
                 } else {
@@ -224,7 +229,7 @@ private fun TimelineMilestoneRow(
                         text = status.definition.title,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = if (status.isNextTarget || status.isAchieved) FontWeight.Bold else FontWeight.Normal,
-                        color = if (status.isAchieved) SteadfastGold else MaterialTheme.colorScheme.onSurface
+                        color = if (status.isAchieved) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = if (status.isAchieved) "Completed" else if (status.isNextTarget) "Next Goal Ahead" else "Upcoming",
@@ -238,7 +243,7 @@ private fun TimelineMilestoneRow(
                         text = "IN SIGHT",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = SteadfastGold,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
                             .background(SteadfastGold.copy(alpha = 0.15f))

@@ -5,6 +5,13 @@ plugins {
 }
 
 android {
+  val optimizedSmoke = providers.gradleProperty("optimizedSmoke").orNull == "true"
+  if (optimizedSmoke) {
+    testBuildType = "release"
+    sourceSets.getByName("androidTest").java.setSrcDirs(listOf("src/optimizedSmoke/java"))
+    sourceSets.getByName("androidTest").kotlin.setSrcDirs(listOf("src/optimizedSmoke/java"))
+    sourceSets.getByName("androidTest").manifest.srcFile("src/optimizedSmoke/AndroidManifest.xml")
+  }
   namespace = "com.steadfast.app"
   compileSdk = 36
 
@@ -15,7 +22,7 @@ android {
     versionCode = 1
     versionName = "1.0"
 
-    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    testInstrumentationRunner = if (optimizedSmoke) "com.steadfast.app.smoke.OptimizedSmokeRunner" else "androidx.test.runner.AndroidJUnitRunner"
   }
 
   splits {
@@ -42,7 +49,8 @@ android {
       isMinifyEnabled = true
       isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      signingConfig = signingConfigs.findByName("release")
+      signingConfig = if (optimizedSmoke) signingConfigs.getByName("debug") else signingConfigs.findByName("release")
+      if (optimizedSmoke) testProguardFiles("optimized-smoke-test-rules.pro")
     }
   }
   compileOptions {

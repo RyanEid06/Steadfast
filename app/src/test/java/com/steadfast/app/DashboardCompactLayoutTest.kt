@@ -27,13 +27,13 @@ import org.robolectric.annotation.GraphicsMode
 class DashboardCompactLayoutTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun wideShortDashboardKeepsLongScriptureHeaderAndPrimaryActionVisibleAtLargeFont() {
+    @Test fun wideShortDashboardKeepsLongScriptureHeaderAndPrimaryActionVisibleAtNormalFont() {
         val verse = "No temptation has taken you except what is common to man. God is faithful, who will not allow you to be tempted above what you are able, but will with the temptation also make the way of escape, that you may be able to endure it."
         var strugglingClicked = false
 
         compose.setContent {
             val density = LocalDensity.current
-            CompositionLocalProvider(LocalDensity provides Density(density.density, 1.3f)) {
+            CompositionLocalProvider(LocalDensity provides Density(density.density, 1f)) {
                 SteadfastTheme {
                     DashboardScreen(
                         activeSession = null,

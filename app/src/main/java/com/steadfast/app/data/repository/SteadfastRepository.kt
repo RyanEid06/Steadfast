@@ -2,12 +2,22 @@ package com.steadfast.app.data.repository
 
 import com.steadfast.app.core.time.StreakDurationCalculator
 import com.steadfast.app.data.datastore.SteadfastPreferences
+import com.steadfast.app.data.datastore.UserPreferencesSnapshot
 import androidx.room.withTransaction
 import com.steadfast.app.data.db.SteadfastDatabase
+import com.steadfast.app.data.model.BibleBook
 import com.steadfast.app.data.model.StreakSessionEntity
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import java.time.ZoneId
+
+sealed interface StartupState {
+    data object NeedsSetup : StartupState
+    data class Ready(val session: StreakSessionEntity) : StartupState
+    data class RepairRequired(val reason: String) : StartupState
+}
 
 class SteadfastRepository(
     private val database: SteadfastDatabase,
@@ -28,8 +38,6 @@ class SteadfastRepository(
     ): Long = database.withTransaction {
         validateStart(startEpochMillis, startZoneId)
         require(streakDao.getAllSessionsSync().isEmpty()) { "Recovery history already exists. Use Start Again to retain it." }
-        preferences.setRecoveryFocusId(focusId)
-        preferences.clearShownMilestones()
         val session = StreakSessionEntity(
             recoveryFocusId = focusId,
             startEpochMillis = startEpochMillis,
@@ -37,6 +45,79 @@ class SteadfastRepository(
             endEpochMillis = null
         )
         streakDao.insertSession(session)
+    }
+
+    suspend fun reconcileStartup(validFocusIds: Set<String>): StartupState = startupMutex.withLock {
+        reconcileStartupLocked(validFocusIds)
+    }
+
+    suspend fun completeOnboarding(
+        settings: UserPreferencesSnapshot,
+        startEpochMillis: Long,
+        startZoneId: String,
+        validFocusIds: Set<String>,
+        bibleBooks: List<BibleBook>
+    ): StartupState = startupMutex.withLock {
+        when (val current = reconcileStartupLocked(validFocusIds)) {
+            is StartupState.Ready, is StartupState.RepairRequired -> current
+            StartupState.NeedsSetup -> {
+                require(settings.recoveryFocusId in validFocusIds) { "Choose a valid recovery focus." }
+                require(settings.readingGoalMinimum in 1..5) { "Choose a reading goal from 1 to 5." }
+                require(settings.themeMode in setOf("SYSTEM", "DARK", "LIGHT")) { "Choose a valid theme." }
+                require(validBookmarks(settings, bibleBooks)) { "Choose valid Bible bookmarks." }
+                validateStart(startEpochMillis, startZoneId)
+
+                preferences.stageOnboardingSettings(settings.copy(onboardingComplete = false))
+                val inserted = startInitialSession(settings.recoveryFocusId, startEpochMillis, startZoneId)
+                preferences.setOnboardingComplete(true)
+                StartupState.Ready(streakDao.getAllSessionsSync().single { it.id == inserted })
+            }
+        }
+    }
+
+    private suspend fun reconcileStartupLocked(validFocusIds: Set<String>): StartupState {
+        val history = streakDao.getAllSessionsSync()
+        if (history.isEmpty()) {
+            if (preferences.isOnboardingComplete.firstOrNull() == true) preferences.setOnboardingComplete(false)
+            return StartupState.NeedsSetup
+        }
+        if (!isValidHistory(history, validFocusIds)) {
+            return StartupState.RepairRequired("Recovery history is invalid or has no single active session.")
+        }
+        val active = history.single { it.endEpochMillis == null }
+        val complete = preferences.isOnboardingComplete.firstOrNull() == true
+        val currentPreferences = preferences.snapshotUserSettings()
+        if (currentPreferences.recoveryFocusId != active.recoveryFocusId || !complete) {
+            preferences.reconcileSessionSetup(active.recoveryFocusId, complete = true)
+        }
+        return StartupState.Ready(active)
+    }
+
+    private fun isValidHistory(history: List<StreakSessionEntity>, validFocusIds: Set<String>): Boolean {
+        if (history.count { it.endEpochMillis == null } != 1) return false
+        if (history.any { session ->
+                session.recoveryFocusId !in validFocusIds || !validStart(session.startEpochMillis, session.startZoneId) ||
+                    session.endEpochMillis?.let { it < session.startEpochMillis || it > System.currentTimeMillis() } == true
+            }
+        ) return false
+        return history.sortedWith(compareBy<StreakSessionEntity> { it.startEpochMillis }
+            .thenBy { it.endEpochMillis ?: Long.MAX_VALUE }).zipWithNext().all { (previous, next) ->
+            previous.endEpochMillis != null && previous.endEpochMillis <= next.startEpochMillis
+        }
+    }
+
+    private fun validStart(start: Long, zone: String): Boolean =
+        start > 0 && start <= System.currentTimeMillis() && runCatching { ZoneId.of(zone) }.isSuccess
+
+    private fun validBookmarks(settings: UserPreferencesSnapshot, books: List<BibleBook>): Boolean {
+        fun isValid(bookId: Int?, chapter: Int?, testament: String): Boolean {
+            if (bookId == null && chapter == null) return true
+            if (bookId == null || chapter == null) return false
+            val book = books.singleOrNull { it.id == bookId } ?: return false
+            return book.testament == testament && chapter in 1..book.chapters
+        }
+        return isValid(settings.oldTestamentCurrent?.bookId, settings.oldTestamentCurrent?.chapter, "OT") &&
+            isValid(settings.newTestamentCurrent?.bookId, settings.newTestamentCurrent?.chapter, "NT")
     }
 
     suspend fun restartStreak(
@@ -84,13 +165,14 @@ class SteadfastRepository(
     suspend fun updateSessionStart(
         sessionId: Long,
         newStartEpochMillis: Long,
-        newZoneId: String = ZoneId.systemDefault().id
+        newZoneId: String? = null
     ) = database.withTransaction {
-        validateStart(newStartEpochMillis, newZoneId)
         val history = streakDao.getAllSessionsSync()
         val session = history.find { it.id == sessionId } ?: return@withTransaction
+        val preservedZone = newZoneId ?: session.startZoneId
+        validateStart(newStartEpochMillis, preservedZone)
         require(session.endEpochMillis == null || newStartEpochMillis <= session.endEpochMillis) { "A session cannot start after it ended." }
-        val candidate = session.copy(startEpochMillis = newStartEpochMillis, startZoneId = newZoneId)
+        val candidate = session.copy(startEpochMillis = newStartEpochMillis, startZoneId = preservedZone)
         val ordered = history.map { if (it.id == sessionId) candidate else it }
             .sortedWith(compareBy<StreakSessionEntity> { it.startEpochMillis }.thenBy { it.endEpochMillis ?: Long.MAX_VALUE })
         require(ordered.zipWithNext().all { (previous, next) -> previous.endEpochMillis != null && previous.endEpochMillis <= next.startEpochMillis }) {
@@ -104,6 +186,10 @@ class SteadfastRepository(
     private fun validateStart(start: Long, zone: String) {
         require(start > 0 && start <= System.currentTimeMillis()) { "Choose a valid start time that is not in the future." }
         require(runCatching { ZoneId.of(zone) }.isSuccess) { "Choose a valid start timezone." }
+    }
+
+    private companion object {
+        val startupMutex = Mutex()
     }
 
     suspend fun updateActiveSessionFocus(newFocusId: String) {

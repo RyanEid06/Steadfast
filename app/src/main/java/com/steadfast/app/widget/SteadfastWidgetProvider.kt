@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
+import android.content.ComponentName
 import android.content.Intent
 import android.widget.RemoteViews
 import com.steadfast.app.MainActivity
@@ -20,6 +21,19 @@ import kotlinx.coroutines.launch
 
 internal data class WidgetContent(val streak: String, val focus: String, val milestone: String)
 
+fun requestWidgetRefresh(context: Context) {
+    try {
+        val appContext = context.applicationContext
+        val ids = AppWidgetManager.getInstance(appContext).getAppWidgetIds(ComponentName(appContext, SteadfastWidgetProvider::class.java))
+        if (ids.isNotEmpty()) {
+            appContext.sendBroadcast(Intent(appContext, SteadfastWidgetProvider::class.java).apply {
+                action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+            })
+        }
+    } catch (_: RuntimeException) { /* Optional refresh must not fail a committed mutation; periodic updates remain. */ }
+}
+
 internal suspend fun loadWidgetContent(context: Context): WidgetContent {
     if (BackupManager.hasPendingRestore(context)) {
         return WidgetContent("Open Steadfast", "Restore in progress", "Open the app to finish restoring")
@@ -34,7 +48,7 @@ internal suspend fun loadWidgetContent(context: Context): WidgetContent {
     }
     return WidgetContent(
         "${duration.totalDays} days",
-        active.recoveryFocusId.replace("_", " ").replaceFirstChar { it.uppercase() },
+        "A stronger you. A closer walk.",
         next?.let { "Next: ${it.title}" } ?: "All Milestones Achieved"
     )
 }

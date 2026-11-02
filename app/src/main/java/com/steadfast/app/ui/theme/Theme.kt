@@ -31,7 +31,7 @@ private val DarkColorScheme = darkColorScheme(
     outline = SteadfastNavyBorder,
     outlineVariant = SteadfastSubtleText,
     error = SteadfastStrugglingDark,
-    onError = SteadfastCream,
+    onError = SteadfastNavyDark,
     errorContainer = SteadfastStrugglingContainerDark,
     onErrorContainer = SteadfastGoldLight
 )

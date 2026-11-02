@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +18,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -42,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
@@ -91,7 +96,10 @@ fun DashboardScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        val compactLandscape = maxWidth >= 700.dp && maxHeight <= 500.dp
+        val compactLandscape = maxWidth >= 600.dp && maxHeight <= 500.dp
+        val compactPortrait = maxWidth < 600.dp && maxHeight <= 520.dp
+        val landscapeUnitsBesideRing = maxWidth < 700.dp || LocalDensity.current.fontScale >= 1.3f
+        val ultraCompactLandscape = maxHeight <= 240.dp && LocalDensity.current.fontScale >= 1.8f
 
         // Atmospheric top hero backdrop fading smoothly into the surface
         Box(
@@ -141,22 +149,54 @@ fun DashboardScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        DashboardReminder()
-                        CircularStreakTimer(
-                            duration = duration,
-                            size = 196.dp,
-                            modifier = Modifier.testTag("dashboard_streak_circle")
-                        )
+                        if (!ultraCompactLandscape) DashboardReminder()
+                        if (landscapeUnitsBesideRing) {
+                            CircularStreakTimer(
+                                duration = duration,
+                                size = when {
+                                    ultraCompactLandscape && StreakDurationCalculator.getDisplayUnits(duration).size >= 5 -> 64.dp
+                                    ultraCompactLandscape -> 80.dp
+                                    else -> 112.dp
+                                },
+                                modifier = Modifier.testTag("dashboard_streak_circle"),
+                                unitsBesideRing = true
+                            )
+                        } else {
+                            CircularStreakTimer(
+                                duration = duration,
+                                size = 196.dp,
+                                modifier = Modifier.testTag("dashboard_streak_circle")
+                            )
+                        }
                     }
                     Column(
                         modifier = Modifier.weight(1.1f),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        DashboardScriptureCard(dailyEncouragement, compact = true)
+                        DashboardScriptureCard(
+                            dailyEncouragement,
+                            compact = true,
+                            modifier = Modifier.weight(1f),
+                            scrollable = true
+                        )
                         DashboardStrugglingAction(onStrugglingClicked)
                     }
                 }
+            } else if (compactPortrait) {
+                CircularStreakTimer(
+                    duration = duration,
+                    size = 112.dp,
+                    modifier = Modifier.testTag("dashboard_streak_circle"),
+                    unitsBesideRing = true
+                )
+                DashboardScriptureCard(
+                    dailyEncouragement,
+                    compact = true,
+                    modifier = Modifier.weight(1f),
+                    scrollable = true
+                )
+                DashboardStrugglingAction(onStrugglingClicked)
             } else {
                 DashboardReminder()
                 CircularStreakTimer(
@@ -214,7 +254,7 @@ private fun DashboardHeader(focusLabel: String, onSettingsClicked: () -> Unit) {
                     fontFamily = FontFamily.Serif,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.6.sp,
-                    color = SteadfastGold
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Text(
                     text = focusLabel,
@@ -246,27 +286,37 @@ private fun DashboardReminder() {
 }
 
 @Composable
-private fun DashboardScriptureCard(dailyEncouragement: CuratedVerse, compact: Boolean = false) {
+@OptIn(ExperimentalLayoutApi::class)
+private fun DashboardScriptureCard(
+    dailyEncouragement: CuratedVerse,
+    compact: Boolean = false,
+    modifier: Modifier = Modifier,
+    scrollable: Boolean = false
+) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)),
         border = BorderStroke(1.dp, SteadfastGold.copy(alpha = 0.25f)),
-        modifier = Modifier.fillMaxWidth().testTag("dashboard_scripture_card")
+        modifier = modifier.fillMaxWidth().testTag("dashboard_scripture_card")
     ) {
-        Column(modifier = Modifier.padding(horizontal = if (compact) 12.dp else 16.dp, vertical = if (compact) 8.dp else 12.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier
+                .then(if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier)
+                .padding(horizontal = if (compact) 12.dp else 16.dp, vertical = if (compact) 8.dp else 12.dp)
+        ) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.FormatQuote, contentDescription = null, tint = SteadfastGold, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Outlined.FormatQuote, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "SCRIPTURE OF PEACE",
                         style = MaterialTheme.typography.labelSmall,
                         letterSpacing = 1.2.sp,
-                        color = SteadfastGold,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 10.sp
                     )
@@ -289,7 +339,7 @@ private fun DashboardScriptureCard(dailyEncouragement: CuratedVerse, compact: Bo
                             style = MaterialTheme.typography.labelSmall,
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
-                            color = SteadfastGold
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -315,14 +365,13 @@ private fun DashboardStrugglingAction(onStrugglingClicked: () -> Unit) {
         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B2333), contentColor = SteadfastGold),
         border = BorderStroke(1.2.dp, SteadfastGold.copy(alpha = 0.85f))
     ) {
-        Icon(Icons.Default.Shield, contentDescription = null, tint = SteadfastGold, modifier = Modifier.size(20.dp))
+        Icon(Icons.Default.Shield, contentDescription = null, modifier = Modifier.size(20.dp))
         Spacer(modifier = Modifier.width(10.dp))
         Text(
             text = "I'm Struggling",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            letterSpacing = 0.8.sp,
-            color = SteadfastGold
+            letterSpacing = 0.8.sp
         )
     }
 }

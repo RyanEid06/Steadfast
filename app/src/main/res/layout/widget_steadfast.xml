@@ -6,13 +6,14 @@
     android:background="@drawable/bg_widget"
     android:gravity="center"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="8dp">
 
     <ImageView
         android:id="@+id/widget_icon"
         android:layout_width="32dp"
         android:layout_height="32dp"
         android:contentDescription="Steadfast Cross"
+        android:visibility="gone"
         android:src="@drawable/ic_steadfast_launcher_fg" />
 
     <TextView
@@ -22,7 +23,10 @@
         android:layout_marginTop="6dp"
         android:text="Open Steadfast"
         android:textColor="#F6F4ED"
-        android:textSize="22sp"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textSize="20sp"
         android:textStyle="bold" />
 
     <TextView
@@ -31,6 +35,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
         android:ellipsize="end"
+        android:includeFontPadding="false"
         android:maxLines="1"
         android:text="Steadfast Recovery"
         android:textColor="#D4AF37"
@@ -43,6 +48,7 @@
         android:layout_marginTop="2dp"
         android:text="Open the app to refresh"
         android:textColor="#94A0B4"
-        android:textSize="10sp" />
+        android:textSize="10sp"
+        android:visibility="gone" />
 
 </LinearLayout>

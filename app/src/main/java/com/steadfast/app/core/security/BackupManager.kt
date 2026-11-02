@@ -14,6 +14,7 @@ import com.steadfast.app.data.model.BibleChapterCompletionEntity
 import com.steadfast.app.data.model.JournalEntryEntity
 import com.steadfast.app.data.model.StreakSessionEntity
 import com.steadfast.app.data.seed.AssetSeedLoader
+import com.steadfast.app.widget.requestWidgetRefresh
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -317,11 +318,13 @@ class BackupManager(
                     roomCommitted = true
                     clearJournal()
                     mutableRestoreState.value = RestoreState.READY
+                    requestWidgetRefresh(context)
                     Result.success(Unit)
                 } catch (error: Exception) {
                     try {
                         val committed = resolvePendingJournal()
                         mutableRestoreState.value = RestoreState.READY
+                        requestWidgetRefresh(context)
                         if (error is CancellationException) throw error
                         if (committed || roomCommitted) Result.success(Unit) else Result.failure(error)
                     } catch (recoveryError: Exception) {
@@ -475,7 +478,8 @@ class BackupManager(
     private fun randomBytes(size: Int) = ByteArray(size).also { SecureRandom().nextBytes(it) }
 
     private fun deriveKey(passphrase: String, salt: ByteArray, iterations: Int): SecretKeySpec {
-        val spec = PBEKeySpec(passphrase.toCharArray(), salt, iterations, KEY_BIT_LENGTH)
+        // Android rejects an empty PBE password; one NUL has the same zero-padded HMAC key (RFC 2104).
+        val spec = PBEKeySpec(if (passphrase.isEmpty()) charArrayOf('\u0000') else passphrase.toCharArray(), salt, iterations, KEY_BIT_LENGTH)
         return try {
             val bytes = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
             try { SecretKeySpec(bytes, "AES") } finally { bytes.fill(0) }

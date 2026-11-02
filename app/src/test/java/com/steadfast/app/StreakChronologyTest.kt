@@ -83,6 +83,19 @@ class StreakChronologyTest {
         assertEquals(1, db.streakDao().getAllSessionsSync().size)
     }
 
+    @Test fun unchangedStartEditAfterTravelPreservesTheStoredZone() = runBlocking {
+        val start = now - 60_000
+        val id = db.streakDao().insertSession(StreakSessionEntity(
+            recoveryFocusId = "pornography", startEpochMillis = start, startZoneId = "Asia/Beirut"
+        ))
+        val before = java.util.TimeZone.getDefault()
+        try {
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("America/New_York"))
+            repository.updateSessionStart(id, start)
+            assertEquals("Asia/Beirut", db.streakDao().getActiveSessionSync()!!.startZoneId)
+        } finally { java.util.TimeZone.setDefault(before) }
+    }
+
     @Test fun editingStartCannotOverlapArchivedHistoryOrBeFuture() = runBlocking {
         val boundary = now - 20_000
         db.streakDao().insertSession(StreakSessionEntity(recoveryFocusId = "pornography", startEpochMillis = boundary - 20_000, endEpochMillis = boundary, startZoneId = "UTC"))

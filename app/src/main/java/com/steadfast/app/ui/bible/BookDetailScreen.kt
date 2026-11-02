@@ -45,6 +45,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,11 +71,22 @@ fun BookDetailScreen(
     onToggleChapter: (chapter: Int) -> Unit,
     onSetCurrentReading: (chapter: Int) -> Unit,
     onBackClicked: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isLoading: Boolean = false,
+    loadFailed: Boolean = false
 ) {
     if (bookWithProgress == null) {
-        Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Book not found")
+        Column(modifier = modifier.fillMaxSize()) {
+            IconButton(onClick = onBackClicked, modifier = Modifier.testTag("book_detail_back_button")) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            }
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(when {
+                    loadFailed -> "This book could not load. Go back and try again."
+                    isLoading -> "Loading book…"
+                    else -> "Book not found"
+                })
+            }
         }
         return
     }
@@ -85,6 +97,12 @@ fun BookDetailScreen(
     val currentChapter = if (isCurrentBook) currentReading?.chapter else null
 
     var chapterActionDialogChapter by remember { mutableStateOf<Int?>(null) }
+    var showReadingPicker by rememberSaveable { mutableStateOf(false) }
+    if (showReadingPicker) ReadingLocationDialog(
+        title = "Set current reading", books = listOf(book), current = currentReading?.takeIf { it.bookId == book.id },
+        onSave = { _, chapter -> onSetCurrentReading(chapter); showReadingPicker = false },
+        onDismiss = { showReadingPicker = false }
+    )
 
     Column(
         modifier = modifier
@@ -117,6 +135,11 @@ fun BookDetailScreen(
             )
         }
 
+        TextButton(onClick = { showReadingPicker = true }, modifier = Modifier.testTag("book_set_reading")) {
+            Icon(Icons.Default.BookmarkBorder, contentDescription = null)
+            Text(if (isCurrentBook) "Change current reading" else "Set current reading")
+        }
+
         // Summary Card following Style 3
         Card(
             shape = RoundedCornerShape(16.dp),
@@ -134,14 +157,14 @@ fun BookDetailScreen(
                     Text(
                         text = if (book.testament == "OT") "OLD TESTAMENT" else "NEW TESTAMENT",
                         style = MaterialTheme.typography.labelSmall,
-                        color = SteadfastGold,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
                         text = "${(bookWithProgress.percentage * 100).toInt()}%",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = SteadfastGold
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
 
@@ -153,7 +176,7 @@ fun BookDetailScreen(
                         .fillMaxWidth()
                         .height(8.dp)
                         .clip(RoundedCornerShape(4.dp)),
-                    color = SteadfastGold,
+                    color = MaterialTheme.colorScheme.primary,
                     trackColor = MaterialTheme.colorScheme.surface,
                     strokeCap = StrokeCap.Round
                 )
@@ -174,7 +197,7 @@ fun BookDetailScreen(
                             text = "Reading: Ch. $currentChapter",
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = SteadfastGold
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -239,7 +262,7 @@ fun BookDetailScreen(
                         chapterActionDialogChapter = null
                         onSetCurrentReading(ch)
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = SteadfastGold, contentColor = MaterialTheme.colorScheme.surface)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary)
                 ) {
                     Text("Set as Current Reading")
                 }
@@ -318,7 +341,7 @@ private fun ChapterCell(
             Icon(
                 imageVector = Icons.Default.Bookmark,
                 contentDescription = "Currently Reading",
-                tint = if (isCompleted) SteadfastNavyDark else SteadfastGold,
+                tint = if (isCompleted) SteadfastNavyDark else MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(3.dp)

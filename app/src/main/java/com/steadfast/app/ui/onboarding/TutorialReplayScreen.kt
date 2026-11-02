@@ -11,10 +11,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -36,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,6 +47,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
@@ -95,7 +103,7 @@ fun TutorialReplayScreen(
         )
     }
 
-    var currentStep by remember { mutableIntStateOf(0) }
+    var currentStep by rememberSaveable { mutableIntStateOf(0) }
     val pillar = pillars[currentStep]
 
     Box(
@@ -150,7 +158,7 @@ fun TutorialReplayScreen(
                     text = "STEADFAST GUIDE",
                     style = MaterialTheme.typography.labelSmall,
                     letterSpacing = 1.5.sp,
-                    color = SteadfastGold,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
                 )
 
@@ -177,11 +185,13 @@ fun TutorialReplayScreen(
                 border = androidx.compose.foundation.BorderStroke(1.dp, SteadfastGold.copy(alpha = 0.3f)),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .weight(1f)
                     .padding(vertical = 16.dp)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
                         .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -196,7 +206,7 @@ fun TutorialReplayScreen(
                         Icon(
                             imageVector = pillar.icon,
                             contentDescription = null,
-                            tint = SteadfastGold,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(32.dp)
                         )
                     }
@@ -207,7 +217,7 @@ fun TutorialReplayScreen(
                         text = pillar.subtitle.uppercase(),
                         style = MaterialTheme.typography.labelSmall,
                         letterSpacing = 1.2.sp,
-                        color = SteadfastGold,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold
                     )
 
@@ -243,7 +253,10 @@ fun TutorialReplayScreen(
                 Row(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = 20.dp)
+                    modifier = Modifier.padding(bottom = 20.dp).semantics {
+                        contentDescription = "Step ${currentStep + 1} of ${pillars.size}"
+                        progressBarRangeInfo = ProgressBarRangeInfo((currentStep + 1).toFloat(), 1f..pillars.size.toFloat())
+                    }
                 ) {
                     repeat(pillars.size) { index ->
                         val isSelected = index == currentStep
@@ -266,12 +279,12 @@ fun TutorialReplayScreen(
                             onClick = { currentStep-- },
                             modifier = Modifier
                                 .weight(1f)
-                                .height(50.dp)
+                                .heightIn(min = 50.dp)
                                 .testTag("tutorial_prev_button"),
                             shape = RoundedCornerShape(14.dp),
                             border = androidx.compose.foundation.BorderStroke(1.dp, SteadfastGold.copy(alpha = 0.5f))
                         ) {
-                            Text("Previous", color = SteadfastGold, fontWeight = FontWeight.SemiBold)
+                            Text("Previous", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                         }
                     }
 
@@ -285,10 +298,10 @@ fun TutorialReplayScreen(
                         },
                         modifier = Modifier
                             .weight(1f)
-                            .height(50.dp)
+                            .heightIn(min = 50.dp)
                             .testTag("tutorial_next_button"),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = SteadfastGold,
+                            containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = SteadfastNavyDark
                         ),
                         shape = RoundedCornerShape(14.dp)

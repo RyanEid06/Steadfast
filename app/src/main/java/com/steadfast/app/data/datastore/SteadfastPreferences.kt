@@ -137,6 +137,25 @@ class SteadfastPreferences(context: Context, private val store: DataStore<Prefer
         }
     }
 
+    /** Persist validated onboarding choices while leaving recovery incomplete until Room succeeds. */
+    suspend fun stageOnboardingSettings(snapshot: UserPreferencesSnapshot) {
+        val existing = snapshotUserSettings()
+        replaceUserSettings(snapshot.copy(
+            oldTestamentCurrent = snapshot.oldTestamentCurrent ?: existing.oldTestamentCurrent,
+            newTestamentCurrent = snapshot.newTestamentCurrent ?: existing.newTestamentCurrent,
+            shownMilestones = snapshot.shownMilestones.ifEmpty { existing.shownMilestones },
+            onboardingComplete = false
+        ))
+    }
+
+    /** Keep the duplicated focus and readiness fields consistent in one DataStore commit. */
+    suspend fun reconcileSessionSetup(focusId: String, complete: Boolean) {
+        store.edit {
+            it[Keys.RECOVERY_FOCUS_ID] = focusId
+            it[Keys.ONBOARDING_COMPLETE] = complete
+        }
+    }
+
     suspend fun setOnboardingComplete(complete: Boolean) {
         store.edit { it[Keys.ONBOARDING_COMPLETE] = complete }
     }

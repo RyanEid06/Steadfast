@@ -63,8 +63,9 @@ fun BreathingExerciseScreen(
     onDoneClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var phaseIndex by remember { mutableIntStateOf(0) }
-    var secondsRemaining by remember { mutableIntStateOf(4) }
+    val state = androidx.lifecycle.viewmodel.compose.viewModel<BreathingStateModel>()
+    val phaseIndex = state.phaseIndex
+    val secondsRemaining = state.secondsRemaining
     val phases = remember { BreathPhase.values() }
     val currentPhase = phases[phaseIndex]
 
@@ -75,20 +76,17 @@ fun BreathingExerciseScreen(
     LaunchedEffect(lifecycle) {
         lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
             while (isActive) {
-                val phase = phases[phaseIndex]
+                val phase = phases[state.phaseIndex]
                 targetScale = if (phase.isExpand) 1.25f else 0.7f
-                for (sec in phase.seconds downTo 1) {
-                    secondsRemaining = sec
-                    delay(1_000L)
-                }
-                phaseIndex = (phaseIndex + 1) % phases.size
+                delay(1_000L)
+                state.advanceSecond()
             }
         }
     }
 
     val effectiveScale = if (reducedMotion) 1f else animateFloatAsState(
         targetValue = targetScale,
-        animationSpec = tween(durationMillis = 4000, easing = LinearEasing),
+        animationSpec = tween(durationMillis = secondsRemaining * 1000, easing = LinearEasing),
         label = "breath_scale"
     ).value
 

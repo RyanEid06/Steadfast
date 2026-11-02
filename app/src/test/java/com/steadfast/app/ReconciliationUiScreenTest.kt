@@ -52,6 +52,8 @@ class ReconciliationUiScreenTest {
             }
         }
         compose.onNodeWithTag("onboarding_welcome_next").performClick()
+        compose.onNodeWithTag("onboarding_focus_next").assertIsNotEnabled()
+        compose.onNodeWithTag("focus_item_discipline").performClick()
         compose.onNodeWithTag("onboarding_focus_next").performClick()
         compose.onNodeWithTag("onboarding_datetime_next").assertIsDisplayed().performClick()
         compose.onNodeWithTag("onboarding_bible_next").performClick()
@@ -79,6 +81,12 @@ class ReconciliationUiScreenTest {
         compose.onNodeWithTag("journal_entry_1").assertExists()
         compose.onNodeWithTag("journal_entry_2").assertDoesNotExist()
         compose.onNodeWithTag("journal_entry_3").assertDoesNotExist()
+        compose.onNodeWithTag("journey_tab_Overview").performClick()
+        compose.onNodeWithTag("journey_tab_Journal").performClick()
+        compose.onNodeWithTag("journal_search_input").assertTextContains("prayer")
+        compose.onNodeWithTag("journal_entry_1").assertExists()
+        compose.onNodeWithTag("journal_entry_2").assertDoesNotExist()
+        compose.onNodeWithTag("journal_entry_3").assertDoesNotExist()
     }
 
     @Test fun journalEditAndDeleteTargetsStay48dpWithLargeFonts() {
@@ -99,6 +107,22 @@ class ReconciliationUiScreenTest {
         listOf("Edit", "Delete").forEach {
             compose.onNodeWithContentDescription(it).assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp)
         }
+    }
+
+    @Test fun editingANotePreservesItsOptionalNullContext() {
+        var saved = false
+        var savedContext: String? = "not saved"
+        compose.setContent { SteadfastTheme {
+            com.steadfast.app.ui.journey.JourneyScreen(
+                null, emptyList(), emptyList(),
+                listOf(com.steadfast.app.data.model.JournalEntryEntity(id = 1, body = "Synthetic uncategorized note", context = null)),
+                null, 0, { _, _ -> }, { _, _ -> }, { _, _, context -> saved = true; savedContext = context }, {}, {}, {}, {}
+            )
+        } }
+        compose.onNodeWithTag("journey_tab_Journal").performClick()
+        compose.onNodeWithContentDescription("Edit").performClick()
+        compose.onNodeWithText("Save").performClick()
+        compose.runOnIdle { org.junit.Assert.assertTrue(saved); org.junit.Assert.assertNull(savedContext) }
     }
 
     @Test fun urgeRouteOpensComposerWithUrgeContextAndSavesIt() {

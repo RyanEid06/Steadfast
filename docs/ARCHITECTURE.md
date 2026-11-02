@@ -18,12 +18,15 @@ com.steadfast.app/
   core/accessibility/             reduced-motion helpers
   core/design/                    shared design behavior
   core/security/                  app lock and encrypted backup/restore
-  core/time/                      streak arithmetic and foreground UI clock
+  core/time/                      streak arithmetic and foreground boundary clocks
   data/datastore/                 user settings and bookmarks
   data/db/                        Room database and DAOs
   data/model/                     persisted and bundled-data models
   data/repository/                streak, journal, Bible, verse, milestone data
   data/seed/                      bundled JSON loading
+  ui/journey/                     Journey-scoped drafts and restart workflow state
+  ui/onboarding/                  onboarding completion coordination
+  ui/settings/                    Activity-scoped backup workflow state
   ui/                             Compose screens and theme
   widget/                         standard Android app widget
 ```
@@ -36,16 +39,22 @@ Repositories expose Room and DataStore values as Flows. Compose screens collect 
 
 At process start, `BackupManager` reconciles any interrupted restore before `MainActivity` composes protected content. The app then reads the coherent restored lock preference. If restore recovery is not ready, or if enabled authentication has not succeeded, personal content stays hidden. Authenticated session state is retained for activity configuration changes only and never across process death.
 
+After restore and authentication gates, startup loads and validates the bundled catalogs off the main thread, then reconciles Room history and the onboarding preference. Startup distinguishes setup-needed, ready, and repair-required states; malformed catalogs show a retry path, while invalid history preserves stored rows and offers restore-only recovery. Fresh onboarding stages its selected preferences while incomplete, inserts the guarded initial Room session, and only then marks setup complete. Existing valid history reconciles an interrupted completion without creating another session.
+
+Sensitive journal drafts and backup passphrases/previews live in configuration-retained ViewModels, not `rememberSaveable` or `SavedStateHandle`; they are intentionally not restored after process death. Harmless filters and tutorial steps may use saved state. Backup export/inspection/restore work continues across activity recreation, with the existing restore journal and content gate protecting replacement.
+
 ## Streak time and milestone behavior
 
-`StreakSessionEntity` persists the start instant and its IANA zone ID. `StreakDurationCalculator` derives elapsed totals from instants and calendar years/months/days in the stored zone. `rememberForegroundTimeMillis` updates while the Compose lifecycle is `RESUMED`; Dashboard recalculates from that in-memory clock, without a Room write or per-second database query.
+`StreakSessionEntity` persists the start instant and its IANA zone ID. `StreakDurationCalculator` derives elapsed totals from instants and calendar years/months/days in the stored zone. Editing a session start preserves that stored zone unless a caller explicitly supplies another. The Dashboard/Journey shared clock wakes at elapsed-day or stored-zone calendar boundaries; components that display live seconds use a lifecycle-aware foreground clock. These are in-memory clocks, not per-second Room queries.
 
-Milestone definitions are loaded from `app/src/main/assets/milestones.json`. Day milestones use whole elapsed days; month and year milestones use calendar units from the streak duration. The ordered first unachieved milestone is the next target. Celebrated milestone IDs are stored in DataStore and cleared when an initial or restarted session begins. Celebration selection is the highest achieved milestone whose ID is not yet recorded as shown.
+Milestone definitions are loaded from `app/src/main/assets/milestones.json`. Day milestones use whole elapsed days; month and year milestones use calendar units from the streak duration. The ordered first unachieved milestone is the next target. Celebrated milestone IDs are stored in DataStore and cleared when a restarted session begins; onboarding staging preserves an existing set. Celebration selection is the highest achieved milestone whose ID is not yet recorded as shown, and presentation is a modal scoped to the active session on Dashboard. Longest-streak history is recalculated across active day boundaries without waiting for a Room write.
 
 ## Bundled data
 
-`AssetSeedLoader` reads Bible-book structure, recovery-focus options, milestone definitions, verse-reference catalogs, and scale comparisons from app assets. Bible text itself is looked up by exact reference from the bundled WEB data; the UI can fall back to showing the reference when text is unavailable.
+`AssetSeedLoader` reads Bible-book structure, recovery-focus options, milestone definitions, verse-reference catalogs, and scale comparisons from app assets using generated Moshi adapters. Successful catalogs are validated and cached; a failed load is retryable and does not silently become an empty catalog. The optimized native smoke harness is opt-in test wiring and must not retain seed models in the optimized application. Bible text itself is looked up by exact reference from the bundled WEB data; the UI can fall back to showing the reference when text is unavailable.
+
+The widget is focus-neutral and shows a generic encouragement line, elapsed-day count, and optional next milestone. A shared refresh request runs after coherent startup and relevant successful mutations; restore replacement refreshes from its owning operation, and the stable-data guard prevents publication during pending restore.
 
 ## Checks
 
-The project has JVM/Robolectric and Android instrumentation suites, plus Gradle lint and debug/release assembly tasks. See [Acceptance tests](ACCEPTANCE_TESTS.md) for the checklist and the evidence observed for this reconciliation.
+The project has JVM/Robolectric and Android instrumentation suites, plus Gradle lint and debug/release assembly tasks. Current bug-fix gate status and historical reconciliation evidence are separated in [Acceptance tests](ACCEPTANCE_TESTS.md); pending runtime checks are not implied by this architecture description.

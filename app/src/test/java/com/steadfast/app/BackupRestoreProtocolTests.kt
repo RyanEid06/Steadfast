@@ -112,6 +112,41 @@ class BackupRestoreProtocolTests {
         assertEquals(30, db.streakDao().getActiveSessionSync()?.id?.toInt())
     }
 
+    @Test fun unavailableWidgetServiceCannotInvalidateACommittedRestore() = runBlocking {
+        var widgetLookupAttempted = false
+        val unavailableWidgetContext = object : android.content.ContextWrapper(context) {
+            override fun getApplicationContext(): Context = this
+            override fun getSystemService(name: String): Any? {
+                if (name == Context.APPWIDGET_SERVICE) {
+                    widgetLookupAttempted = true
+                    throw IllegalStateException("Synthetic widget service unavailable")
+                }
+                return super.getSystemService(name)
+            }
+        }
+        val restoring = BackupManager(unavailableWidgetContext, db, prefs) { recoveryKey }
+        restoring.recoverPendingRestore().getOrThrow()
+        val result = restoring.restorePayloadWithRollback(payload)
+        assertTrue("Widget lookup failure was not exercised", widgetLookupAttempted)
+        assertTrue("An optional widget refresh must not fail a committed restore", result.isSuccess)
+        assertEquals(RestoreState.READY, restoring.restoreState.value)
+        assertEquals(30L, db.streakDao().getActiveSessionSync()?.id)
+        assertEquals("Replacement reflection", db.journalDao().getAllEntriesSync().single().body)
+        assertEquals(listOf(BibleChapterCompletionEntity(66, 22)), db.bibleDao().getAllCompletedSync())
+        assertEquals(4, prefs.snapshotUserSettings().readingGoalMinimum)
+        assertFalse(BackupManager.hasPendingRestore(context))
+    }
+
+    @Test fun legacyEnvelopeEmptyPasswordRemainsReadOnlyDuringPreviewAndCanRestore() = runBlocking {
+        val legacy = payload.copy(schemaVersion = 1, settings = BackupSettingsPayload(recoveryFocusId = "gaming"))
+        val bytes = encryptPortable(legacy, "", "STDF_V1", 65536)
+        manager.previewBackup(bytes.inputStream(), "").getOrThrow()
+        assertOriginalState()
+        manager.importBackup(bytes.inputStream(), "").getOrThrow()
+        assertEquals(UserPreferencesSnapshot(recoveryFocusId = "gaming", onboardingComplete = true), prefs.snapshotUserSettings())
+        assertEquals(30, db.streakDao().getActiveSessionSync()?.id?.toInt())
+    }
+
     @Test fun datastoreFailureRollsBackAllRoomTablesAndAllPreferences() = runBlocking {
         var failOnce = true
         store.beforeUpdate = { if (failOnce) { failOnce = false; throw IOException("injected preference write failure") } }

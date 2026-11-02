@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -38,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +58,7 @@ import com.steadfast.app.data.repository.BookWithProgress
 import com.steadfast.app.ui.theme.SteadfastGold
 
 @Composable
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 fun BibleScreen(
     progress: BibleProgress,
     books: List<BookWithProgress>,
@@ -66,7 +69,7 @@ fun BibleScreen(
     onSettingsClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedFilter by remember { mutableIntStateOf(0) } // 0 = All, 1 = OT, 2 = NT
+    var selectedFilter by rememberSaveable { mutableIntStateOf(0) } // 0 = All, 1 = OT, 2 = NT
 
     val filteredBooks = remember(books, selectedFilter) {
         when (selectedFilter) {
@@ -138,14 +141,14 @@ fun BibleScreen(
                                     text = "CANONICAL BIBLE PROGRESS",
                                     style = MaterialTheme.typography.labelSmall,
                                     letterSpacing = 1.sp,
-                                    color = SteadfastGold,
+                                    color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
                                     text = "${(progress.wholePercentage * 100).toInt()}%",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = SteadfastGold
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
 
@@ -157,7 +160,7 @@ fun BibleScreen(
                                     .fillMaxWidth()
                                     .height(8.dp)
                                     .clip(RoundedCornerShape(4.dp)),
-                                color = SteadfastGold,
+                                color = MaterialTheme.colorScheme.primary,
                                 trackColor = MaterialTheme.colorScheme.surface,
                                 strokeCap = StrokeCap.Round
                             )
@@ -208,6 +211,7 @@ fun BibleScreen(
 
                 // Currently Reading Cards (Max 1 OT, Max 1 NT)
                 item {
+                    Text("Reading target: $readingGoal+ chapters", style = MaterialTheme.typography.bodyMedium)
                     Text(
                         text = "CURRENTLY READING",
                         style = MaterialTheme.typography.labelSmall,
@@ -226,7 +230,7 @@ fun BibleScreen(
                             bookName = otBook?.name ?: "None Set",
                             chapter = otReading?.chapter ?: 1,
                             isSet = otReading != null,
-                            onClick = { otReading?.bookId?.let(onBookClicked) },
+                            onClick = { otReading?.bookId?.let(onBookClicked) ?: onSettingsClicked() },
                             modifier = Modifier.weight(1f)
                         )
                         CurrentlyReadingCard(
@@ -234,7 +238,7 @@ fun BibleScreen(
                             bookName = ntBook?.name ?: "None Set",
                             chapter = ntReading?.chapter ?: 1,
                             isSet = ntReading != null,
-                            onClick = { ntReading?.bookId?.let(onBookClicked) },
+                            onClick = { ntReading?.bookId?.let(onBookClicked) ?: onSettingsClicked() },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -242,8 +246,9 @@ fun BibleScreen(
 
                 // Filter Chips
                 item {
-                    Row(
+                    FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                         modifier = Modifier.padding(top = 8.dp)
                     ) {
                         listOf("All (66)", "Old Testament (39)", "New Testament (27)").forEachIndexed { index, label ->
@@ -253,7 +258,7 @@ fun BibleScreen(
                                 label = { Text(label, style = MaterialTheme.typography.labelSmall) },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = SteadfastGold.copy(alpha = 0.2f),
-                                    selectedLabelColor = SteadfastGold
+                                    selectedLabelColor = MaterialTheme.colorScheme.primary
                                 ),
                                 border = FilterChipDefaults.filterChipBorder(
                                     enabled = true,
@@ -304,7 +309,7 @@ private fun TestamentProgressCard(
                     .fillMaxWidth()
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp)),
-                color = SteadfastGold,
+                color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.surface
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -321,7 +326,7 @@ private fun TestamentProgressCard(
                     text = "${(percentage * 100).toInt()}%",
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,
-                    color = SteadfastGold
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -339,7 +344,6 @@ private fun CurrentlyReadingCard(
 ) {
     OutlinedCard(
         onClick = onClick,
-        enabled = isSet,
         shape = RoundedCornerShape(14.dp),
         border = BorderStroke(1.dp, if (isSet) SteadfastGold.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
         modifier = modifier
@@ -361,11 +365,11 @@ private fun CurrentlyReadingCard(
                 Text(
                     text = title.uppercase(),
                     style = MaterialTheme.typography.labelSmall,
-                    fontSize = 9.sp,
+                    fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = if (isSet) "$bookName $chapter" else "Tap book to set",
+                    text = if (isSet) "$bookName $chapter" else "Set in Settings",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -408,7 +412,7 @@ private fun BookListItem(
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = "Completed",
-                            tint = SteadfastGold,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -428,7 +432,7 @@ private fun BookListItem(
                         .width(60.dp)
                         .height(6.dp)
                         .clip(RoundedCornerShape(3.dp)),
-                    color = SteadfastGold,
+                    color = MaterialTheme.colorScheme.primary,
                     trackColor = MaterialTheme.colorScheme.surface
                 )
                 Spacer(modifier = Modifier.width(8.dp))

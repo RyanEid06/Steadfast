@@ -13,6 +13,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -63,6 +68,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -96,6 +102,8 @@ import java.util.Calendar
 fun OnboardingWizardScreen(
     focuses: List<RecoveryFocus>,
     bibleBooks: List<BibleBook>,
+    isCompleting: Boolean = false,
+    completionError: String? = null,
     onComplete: (
         focusId: String,
         startEpochMillis: Long,
@@ -109,26 +117,26 @@ fun OnboardingWizardScreen(
         appLockEnabled: Boolean
     ) -> Unit
 ) {
-    var step by remember { mutableIntStateOf(0) }
+    var step by rememberSaveable { mutableIntStateOf(0) }
     val totalSteps = 6
     val reducedMotion = rememberReducedMotion()
 
-    var selectedFocusId by remember { mutableStateOf(focuses.firstOrNull()?.id ?: "pornography") }
-    var startEpochMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    val zoneId = remember { ZoneId.systemDefault().id }
+    var selectedFocusId by rememberSaveable { mutableStateOf("") }
+    var startEpochMillis by rememberSaveable { mutableLongStateOf(System.currentTimeMillis()) }
+    val zoneId = rememberSaveable { ZoneId.systemDefault().id }
 
     // OT and NT current reading options (optional selection!)
-    var isOtReadingActive by remember { mutableStateOf(false) }
-    var selectedOtBookId by remember { mutableStateOf<Int?>(1) } // Genesis
-    var selectedOtChapter by remember { mutableIntStateOf(1) }
+    var isOtReadingActive by rememberSaveable { mutableStateOf(false) }
+    var selectedOtBookId by rememberSaveable { mutableStateOf<Int?>(1) } // Genesis
+    var selectedOtChapter by rememberSaveable { mutableIntStateOf(1) }
 
-    var isNtReadingActive by remember { mutableStateOf(false) }
-    var selectedNtBookId by remember { mutableStateOf<Int?>(40) } // Matthew
-    var selectedNtChapter by remember { mutableIntStateOf(1) }
+    var isNtReadingActive by rememberSaveable { mutableStateOf(false) }
+    var selectedNtBookId by rememberSaveable { mutableStateOf<Int?>(40) } // Matthew
+    var selectedNtChapter by rememberSaveable { mutableIntStateOf(1) }
 
-    var readingGoal by remember { mutableIntStateOf(2) }
-    var selectedTheme by remember { mutableStateOf(ThemeSetting.SYSTEM) }
-    var appLockEnabled by remember { mutableStateOf(false) }
+    var readingGoal by rememberSaveable { mutableIntStateOf(2) }
+    var selectedTheme by rememberSaveable { mutableStateOf(ThemeSetting.SYSTEM) }
+    var appLockEnabled by rememberSaveable { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -150,7 +158,7 @@ fun OnboardingWizardScreen(
             ) {
                 if (step > 0) {
                     IconButton(
-                        onClick = { step-- },
+                        onClick = { if (!isCompleting) step-- },
                         modifier = Modifier.testTag("onboarding_back_button")
                     ) {
                         Icon(
@@ -165,6 +173,10 @@ fun OnboardingWizardScreen(
 
                 // Page Position Indicator
                 Row(
+                    modifier = Modifier.semantics {
+                        contentDescription = "Step ${step + 1} of $totalSteps"
+                        progressBarRangeInfo = ProgressBarRangeInfo((step + 1).toFloat(), 1f..totalSteps.toFloat())
+                    },
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -238,6 +250,8 @@ fun OnboardingWizardScreen(
                         onNext = { step = 5 }
                     )
                     5 -> StepTourAndFinish(
+                        isCompleting = isCompleting,
+                        completionError = completionError,
                         selectedFocusName = focuses.find { it.id == selectedFocusId }?.label ?: selectedFocusId,
                         readingGoal = readingGoal,
                         hasOtReading = isOtReadingActive && selectedOtBookId != null,
@@ -308,7 +322,7 @@ private fun StepWelcome(onNext: () -> Unit) {
             Text(
                 text = "STEADFAST",
                 style = MaterialTheme.typography.displayMedium,
-                color = SteadfastGold,
+                color = MaterialTheme.colorScheme.primary,
                 fontFamily = FontFamily.Serif,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp,
@@ -344,8 +358,8 @@ private fun StepWelcome(onNext: () -> Unit) {
                 .height(52.dp)
                 .testTag("onboarding_welcome_next"),
             colors = ButtonDefaults.buttonColors(
-                containerColor = SteadfastGold,
-                contentColor = MaterialTheme.colorScheme.surface
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ),
             shape = RoundedCornerShape(14.dp)
         ) {
@@ -408,15 +422,15 @@ private fun StepFocus(
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth(),
+                .fillMaxWidth().selectableGroup(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(focuses) { focus ->
                 val isSelected = focus.id == selectedFocusId
                 OutlinedCard(
-                    onClick = { onSelectFocus(focus.id) },
                     modifier = Modifier
                         .fillMaxWidth()
+                        .selectable(selected = isSelected, role = Role.RadioButton, onClick = { onSelectFocus(focus.id) })
                         .testTag("focus_item_${focus.id}"),
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.outlinedCardColors(
@@ -424,7 +438,7 @@ private fun StepFocus(
                     ),
                     border = BorderStroke(
                         width = if (isSelected) 2.dp else 1.dp,
-                        color = if (isSelected) SteadfastGold else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
                     )
                 ) {
                     Row(
@@ -437,13 +451,13 @@ private fun StepFocus(
                         Text(
                             text = focus.label,
                             style = MaterialTheme.typography.titleMedium,
-                            color = if (isSelected) SteadfastGold else MaterialTheme.colorScheme.onSurface
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
                         if (isSelected) {
                             Icon(
                                 imageVector = Icons.Default.Check,
-                                contentDescription = "Selected",
-                                tint = SteadfastGold,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -456,13 +470,14 @@ private fun StepFocus(
 
         Button(
             onClick = onNext,
+            enabled = focuses.any { it.id == selectedFocusId },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp)
                 .testTag("onboarding_focus_next"),
             colors = ButtonDefaults.buttonColors(
-                containerColor = SteadfastGold,
-                contentColor = MaterialTheme.colorScheme.surface
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ),
             shape = RoundedCornerShape(14.dp)
         ) {
@@ -566,7 +581,7 @@ private fun StepStartDateTime(
                         .padding(18.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.DateRange, contentDescription = "Date", tint = SteadfastGold, modifier = Modifier.size(28.dp))
+                    Icon(Icons.Default.DateRange, contentDescription = "Date", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
                         Text(text = "START DATE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -592,7 +607,7 @@ private fun StepStartDateTime(
                         .padding(18.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Schedule, contentDescription = "Time", tint = SteadfastGold, modifier = Modifier.size(28.dp))
+                    Icon(Icons.Default.Schedule, contentDescription = "Time", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
                         Text(text = "EXACT TIME", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -637,8 +652,8 @@ private fun StepStartDateTime(
                 .height(52.dp)
                 .testTag("onboarding_datetime_next"),
             colors = ButtonDefaults.buttonColors(
-                containerColor = SteadfastGold,
-                contentColor = MaterialTheme.colorScheme.surface
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ),
             shape = RoundedCornerShape(14.dp)
         ) {
@@ -722,7 +737,7 @@ private fun StepBibleSetup(
                                 text = "$readingGoal+ chapters",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = SteadfastGold
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                         Text(
@@ -736,7 +751,7 @@ private fun StepBibleSetup(
                             onValueChange = { onGoalChanged(it.toInt()) },
                             valueRange = 1f..5f,
                             steps = 3,
-                            colors = SliderDefaults.colors(thumbColor = SteadfastGold, activeTrackColor = SteadfastGold),
+                            colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary, activeTrackColor = MaterialTheme.colorScheme.primary),
                             modifier = Modifier.testTag("onboarding_goal_slider")
                         )
                     }
@@ -771,7 +786,7 @@ private fun StepBibleSetup(
                                         onOtChapterChanged(1)
                                     }
                                 },
-                                colors = SwitchDefaults.colors(checkedThumbColor = SteadfastGold, checkedTrackColor = SteadfastGold.copy(alpha = 0.4f)),
+                                colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = SteadfastGold.copy(alpha = 0.4f)),
                                 modifier = Modifier.testTag("onboarding_ot_switch").semantics { contentDescription = "Old Testament reading bookmark" }
                             )
                         }
@@ -823,7 +838,7 @@ private fun StepBibleSetup(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(text = "Chapter $otChapter of ${selectedOtBook.chapters}", style = MaterialTheme.typography.bodyMedium, color = SteadfastGold)
+                                Text(text = "Chapter $otChapter of ${selectedOtBook.chapters}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                                 Row {
                                     OutlinedButton(
                                         onClick = { if (otChapter > 1) onOtChapterChanged(otChapter - 1) },
@@ -880,7 +895,7 @@ private fun StepBibleSetup(
                                         onNtChapterChanged(1)
                                     }
                                 },
-                                colors = SwitchDefaults.colors(checkedThumbColor = SteadfastGold, checkedTrackColor = SteadfastGold.copy(alpha = 0.4f)),
+                                colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = SteadfastGold.copy(alpha = 0.4f)),
                                 modifier = Modifier.testTag("onboarding_nt_switch").semantics { contentDescription = "New Testament reading bookmark" }
                             )
                         }
@@ -929,7 +944,7 @@ private fun StepBibleSetup(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(text = "Chapter $ntChapter of ${selectedNtBook.chapters}", style = MaterialTheme.typography.bodyMedium, color = SteadfastGold)
+                                Text(text = "Chapter $ntChapter of ${selectedNtBook.chapters}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                                 Row {
                                     OutlinedButton(
                                         onClick = { if (ntChapter > 1) onNtChapterChanged(ntChapter - 1) },
@@ -968,8 +983,8 @@ private fun StepBibleSetup(
                 .height(52.dp)
                 .testTag("onboarding_bible_next"),
             colors = ButtonDefaults.buttonColors(
-                containerColor = SteadfastGold,
-                contentColor = MaterialTheme.colorScheme.surface
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ),
             shape = RoundedCornerShape(14.dp)
         ) {
@@ -1027,14 +1042,14 @@ private fun StepThemeAndLock(
                 ).forEach { (setting, label) ->
                     val isSelected = selectedTheme == setting
                     OutlinedCard(
-                        onClick = { onThemeChanged(setting) },
                         modifier = Modifier
                             .weight(1f)
+                            .selectable(selected = isSelected, role = Role.RadioButton, onClick = { onThemeChanged(setting) })
                             .testTag("theme_option_${setting.name}"),
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(
                             width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) SteadfastGold else MaterialTheme.colorScheme.outline
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
                         ),
                         colors = CardDefaults.outlinedCardColors(
                             containerColor = if (isSelected) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
@@ -1049,7 +1064,7 @@ private fun StepThemeAndLock(
                             Text(
                                 text = label,
                                 style = MaterialTheme.typography.titleMedium,
-                                color = if (isSelected) SteadfastGold else MaterialTheme.colorScheme.onSurface
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -1078,7 +1093,7 @@ private fun StepThemeAndLock(
                         Icon(
                             imageVector = Icons.Default.Fingerprint,
                             contentDescription = null,
-                            tint = SteadfastGold,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(32.dp)
                         )
                         Spacer(modifier = Modifier.width(14.dp))
@@ -1117,7 +1132,7 @@ private fun StepThemeAndLock(
                         },
                         modifier = Modifier.testTag("onboarding_app_lock_switch").semantics { contentDescription = "Biometric / App Lock" },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = SteadfastGold,
+                            checkedThumbColor = MaterialTheme.colorScheme.primary,
                             checkedTrackColor = SteadfastGold.copy(alpha = 0.4f)
                         )
                     )
@@ -1132,8 +1147,8 @@ private fun StepThemeAndLock(
                 .height(52.dp)
                 .testTag("onboarding_security_next"),
             colors = ButtonDefaults.buttonColors(
-                containerColor = SteadfastGold,
-                contentColor = MaterialTheme.colorScheme.surface
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ),
             shape = RoundedCornerShape(14.dp)
         ) {
@@ -1144,6 +1159,8 @@ private fun StepThemeAndLock(
 
 @Composable
 private fun StepTourAndFinish(
+    isCompleting: Boolean,
+    completionError: String?,
     selectedFocusName: String,
     readingGoal: Int,
     hasOtReading: Boolean,
@@ -1165,7 +1182,7 @@ private fun StepTourAndFinish(
             Icon(
                 imageVector = Icons.Outlined.Shield,
                 contentDescription = null,
-                tint = SteadfastGold,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(56.dp)
             )
 
@@ -1217,22 +1234,24 @@ private fun StepTourAndFinish(
 
         Button(
             onClick = onFinish,
+            enabled = !isCompleting,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp)
                 .testTag("onboarding_finish_button"),
             colors = ButtonDefaults.buttonColors(
-                containerColor = SteadfastGold,
-                contentColor = MaterialTheme.colorScheme.surface
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ),
             shape = RoundedCornerShape(14.dp)
         ) {
             Text(
-                text = "Enter Steadfast",
+                text = if (isCompleting) "Saving setup…" else "Enter Steadfast",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
         }
+        completionError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
     }
 }
 
@@ -1243,7 +1262,7 @@ private fun TourItem(title: String, desc: String) {
             text = title,
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
-            color = SteadfastGold
+            color = MaterialTheme.colorScheme.primary
         )
         Text(
             text = desc,

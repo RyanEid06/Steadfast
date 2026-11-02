@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DeleteOutline
@@ -61,6 +62,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -78,13 +80,17 @@ import androidx.compose.ui.unit.sp
 import com.steadfast.app.core.time.StreakDurationCalculator
 import com.steadfast.app.data.model.JournalEntryEntity
 import com.steadfast.app.data.model.MilestoneDefinition
+import com.steadfast.app.data.model.RecoveryFocus
 import com.steadfast.app.data.model.StreakSessionEntity
 import com.steadfast.app.ui.theme.SteadfastGold
 import com.steadfast.app.ui.theme.SteadfastGoldDark
 import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Calendar
+import kotlinx.coroutines.launch
 
 @Composable
 fun JourneyScreen(
@@ -102,27 +108,33 @@ fun JourneyScreen(
     onNavigateToMotivation: () -> Unit,
     onSettingsClicked: () -> Unit,
     modifier: Modifier = Modifier,
-    initialJournalContext: String? = null
+    initialJournalContext: String? = null,
+    onStartAgainValidated: (suspend (Long, String?) -> Result<Unit>)? = null,
+    focuses: List<RecoveryFocus> = emptyList(),
+    currentStreakDays: Long? = null,
+    onSaveJournalEntryValidated: (suspend (Long?, String, String?) -> Result<Unit>)? = null
 ) {
     var selectedTab by rememberSaveable(initialJournalContext) { mutableIntStateOf(if (initialJournalContext != null) 2 else 0) }
-    var showStartAgainDialog by remember { mutableStateOf(false) }
-    var showAddNoteDialog by rememberSaveable(initialJournalContext) { mutableStateOf(initialJournalContext != null) }
-    var newEntryContext by rememberSaveable(initialJournalContext) { mutableStateOf(initialJournalContext ?: "GENERAL") }
-    var entryToEdit by remember { mutableStateOf<JournalEntryEntity?>(null) }
-    var entryToDelete by remember { mutableStateOf<JournalEntryEntity?>(null) }
-
-    val currentTimeMillis = com.steadfast.app.core.time.rememberForegroundTimeMillis(activeSession != null)
-
-    val currentDuration = remember(activeSession, currentTimeMillis) {
-        if (activeSession != null) {
-            StreakDurationCalculator.calculate(
-                startEpochMillis = activeSession.startEpochMillis,
-                startZoneId = activeSession.startZoneId,
-                nowEpochMillis = currentTimeMillis
-            )
-        } else {
-            StreakDurationCalculator.calculate(currentTimeMillis, "UTC", currentTimeMillis)
+    val draft = androidx.lifecycle.viewmodel.compose.viewModel<JourneyDraftModel>()
+    androidx.compose.runtime.LaunchedEffect(initialJournalContext) {
+        if (!draft.initialized) {
+            draft.initialized = true
+            if (initialJournalContext != null) draft.openNew(initialJournalContext)
         }
+    }
+    var showStartAgainDialog by draft::showRestart
+    var showAddNoteDialog by draft::showNew
+    var newEntryContext by draft::context
+    var entryToEdit by draft::editing
+    var entryToDelete by draft::deleting
+    var startAgainStartMillis by draft::restartMillis
+    var restartError by draft::restartError
+    var restartSubmitting by draft::restarting
+    val scope = draft.operationScope
+    val displayedStreakDays = currentStreakDays ?: remember(activeSession) {
+        activeSession?.let {
+            StreakDurationCalculator.calculate(it.startEpochMillis, it.startZoneId).totalDays
+        } ?: 0L
     }
 
     Box(
@@ -178,7 +190,7 @@ fun JourneyScreen(
                             .height(48.dp)
                             .clip(RoundedCornerShape(9.dp))
                             .background(
-                                if (isSelected) SteadfastGold else Color.Transparent
+                                if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
                             )
                             .selectable(selected = isSelected, role = Role.Tab, onClick = { selectedTab = index })
                             .testTag("journey_tab_$title"),
@@ -188,7 +200,7 @@ fun JourneyScreen(
                             text = title,
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -197,23 +209,26 @@ fun JourneyScreen(
             // Tab Content
             when (selectedTab) {
                 0 -> JourneyOverviewTab(
-                    currentStreakDays = currentDuration.totalDays,
+                    currentStreakDays = displayedStreakDays,
                     longestStreakDays = longestStreakDays,
                     nextMilestone = nextMilestone,
                     archivedCount = archivedSessions.size,
                     allSessions = allSessions,
-                    onStartAgainClick = { showStartAgainDialog = true },
+                    onStartAgainClick = { restartError = null; showStartAgainDialog = true },
                     onNavigateToMilestones = onNavigateToMilestones,
                     onNavigateToMotivation = onNavigateToMotivation
                 )
                 1 -> JourneyHistoryTab(
                     allSessions = allSessions,
-                    archivedSessions = archivedSessions
+                    archivedSessions = archivedSessions,
+                    focuses = focuses
                 )
                 2 -> JourneyJournalTab(
                     entries = journalEntries,
-                    onAddClick = { newEntryContext = "GENERAL"; showAddNoteDialog = true },
-                    onEditClick = { entryToEdit = it },
+                    searchQuery = draft.query, selectedFilter = draft.filter,
+                    onQueryChanged = { draft.query = it }, onFilterChanged = { draft.filter = it },
+                    onAddClick = { draft.openNew() },
+                    onEditClick = { draft.openEdit(it) },
                     onDeleteClick = { entryToDelete = it }
                 )
             }
@@ -222,13 +237,13 @@ fun JourneyScreen(
         // Floating Action Button for Journal Tab
         if (selectedTab == 2) {
             FloatingActionButton(
-                onClick = { newEntryContext = "GENERAL"; showAddNoteDialog = true },
+                onClick = { draft.openNew() },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(20.dp)
                     .testTag("journey_add_journal_fab"),
-                containerColor = SteadfastGold,
-                contentColor = MaterialTheme.colorScheme.surface
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Journal Entry")
             }
@@ -238,10 +253,34 @@ fun JourneyScreen(
     // Start Again Confirmation Dialog
     if (showStartAgainDialog) {
         StartAgainDialog(
-            onDismiss = { showStartAgainDialog = false },
+            reflectionNote = draft.restartNote, onReflectionNoteChanged = { draft.restartNote = it },
+            startEpochMillis = startAgainStartMillis,
+            onStartEpochMillisChanged = { startAgainStartMillis = it; restartError = null },
+            errorMessage = restartError,
+            isSubmitting = restartSubmitting,
+            onDismiss = { if (!restartSubmitting) draft.clearRestart() },
             onConfirm = { startMillis, note ->
-                showStartAgainDialog = false
-                onStartAgainConfirmed(startMillis, note)
+                if (onStartAgainValidated == null) {
+                    draft.clearRestart()
+                    onStartAgainConfirmed(startMillis, note)
+                } else if (!restartSubmitting) {
+                    scope.launch {
+                        restartSubmitting = true
+                        val result = runCatching { onStartAgainValidated(startMillis, note) }
+                            .getOrElse { Result.failure(it) }
+                        restartSubmitting = false
+                        if (result.isSuccess) {
+                            restartError = null
+                            draft.clearRestart()
+                        } else {
+                            restartError = if (result.exceptionOrNull() is IllegalArgumentException) {
+                                "Choose a restart time after your current streak and outside archived streaks."
+                            } else {
+                                "Could not start again. Please try once more."
+                            }
+                        }
+                    }
+                }
             }
         )
     }
@@ -249,13 +288,17 @@ fun JourneyScreen(
     // Add Journal Entry Dialog
     if (showAddNoteDialog) {
         JournalEntryEditDialog(
-            initialBody = "",
-            initialContext = newEntryContext,
+            body = draft.body, selectedContext = draft.context,
+            onBodyChanged = { draft.body = it }, onContextChanged = { draft.context = it },
             title = "New Journal Entry",
-            onDismiss = { showAddNoteDialog = false },
+            isSaving = draft.saving, errorMessage = draft.saveError,
+            onDismiss = { if (!draft.saving) draft.clearEditor() },
             onSave = { body, ctx ->
-                showAddNoteDialog = false
-                onAddJournalEntry(body, ctx)
+                val save = onSaveJournalEntryValidated
+                if (save == null) {
+                    draft.clearEditor()
+                    onAddJournalEntry(body, ctx)
+                } else draft.saveJournalEntry(null, save)
             }
         )
     }
@@ -263,13 +306,17 @@ fun JourneyScreen(
     // Edit Journal Entry Dialog
     entryToEdit?.let { entry ->
         JournalEntryEditDialog(
-            initialBody = entry.body,
-            initialContext = entry.context ?: "GENERAL",
+            body = draft.body, selectedContext = draft.context,
+            onBodyChanged = { draft.body = it }, onContextChanged = { draft.context = it },
             title = "Edit Entry",
-            onDismiss = { entryToEdit = null },
+            isSaving = draft.saving, errorMessage = draft.saveError,
+            onDismiss = { if (!draft.saving) draft.clearEditor() },
             onSave = { body, ctx ->
-                entryToEdit = null
-                onUpdateJournalEntry(entry.id, body, ctx)
+                val save = onSaveJournalEntryValidated
+                if (save == null) {
+                    draft.clearEditor()
+                    onUpdateJournalEntry(entry.id, body, ctx)
+                } else draft.saveJournalEntry(entry.id, save)
             }
         )
     }
@@ -337,7 +384,7 @@ private fun JourneyOverviewTab(
                                 text = "STREAK ACTIVITY PREVIEW",
                                 style = MaterialTheme.typography.labelSmall,
                                 letterSpacing = 1.sp,
-                                color = SteadfastGold,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
@@ -373,7 +420,7 @@ private fun JourneyOverviewTab(
                         Text(
                             text = "CURRENT STREAK",
                             style = MaterialTheme.typography.labelSmall,
-                            color = SteadfastGold,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
                         )
                         Spacer(modifier = Modifier.height(4.dp))
@@ -428,7 +475,7 @@ private fun JourneyOverviewTab(
                     Icon(
                         imageVector = Icons.Default.EmojiEvents,
                         contentDescription = null,
-                        tint = SteadfastGold,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(36.dp)
                     )
                     Spacer(modifier = Modifier.width(16.dp))
@@ -436,7 +483,7 @@ private fun JourneyOverviewTab(
                         Text(
                             text = "NEXT MILESTONE",
                             style = MaterialTheme.typography.labelSmall,
-                            color = SteadfastGold,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
@@ -446,11 +493,10 @@ private fun JourneyOverviewTab(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
-                    Text(
-                        text = "View Timeline >",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("View Timeline", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
+                    }
                 }
             }
         }
@@ -472,7 +518,7 @@ private fun JourneyOverviewTab(
                     Icon(
                         imageVector = Icons.Default.Insights,
                         contentDescription = null,
-                        tint = SteadfastGold,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(32.dp)
                     )
                     Spacer(modifier = Modifier.width(16.dp))
@@ -538,7 +584,8 @@ private fun JourneyOverviewTab(
 @Composable
 private fun JourneyHistoryTab(
     allSessions: List<StreakSessionEntity>,
-    archivedSessions: List<StreakSessionEntity>
+    archivedSessions: List<StreakSessionEntity>,
+    focuses: List<RecoveryFocus>
 ) {
     val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM d, yyyy") }
 
@@ -560,7 +607,7 @@ private fun JourneyHistoryTab(
                     Text(
                         text = "STREAK TIMELINE",
                         style = MaterialTheme.typography.labelSmall,
-                        color = SteadfastGold,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -605,11 +652,8 @@ private fun JourneyHistoryTab(
             items(archivedSessions) { session ->
                 val startInstant = Instant.ofEpochMilli(session.startEpochMillis)
                 val endInstant = Instant.ofEpochMilli(session.endEpochMillis ?: session.startEpochMillis)
-                val duration = StreakDurationCalculator.calculate(
-                    session.startEpochMillis,
-                    session.startZoneId,
-                    session.endEpochMillis ?: session.startEpochMillis
-                )
+                val zone = runCatching { ZoneId.of(session.startZoneId) }.getOrElse { ZoneId.systemDefault() }
+                val elapsedMillis = streakElapsedMillis(session.startEpochMillis, session.endEpochMillis ?: session.startEpochMillis)
 
                 Card(
                     shape = RoundedCornerShape(14.dp),
@@ -625,22 +669,22 @@ private fun JourneyHistoryTab(
                     ) {
                         Column {
                             Text(
-                                text = "${duration.totalDays} Days Completed",
+                                text = "${streakElapsedDurationLabel(elapsedMillis)} Completed",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "${startInstant.atZone(ZoneId.systemDefault()).format(dateFormatter)} — ${endInstant.atZone(ZoneId.systemDefault()).format(dateFormatter)}",
+                                text = "${startInstant.atZone(zone).format(dateFormatter)} — ${endInstant.atZone(zone).format(dateFormatter)}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
 
                         Text(
-                            text = session.recoveryFocusId.replace("_", " "),
+                            text = focuses.find { it.id == session.recoveryFocusId }?.label ?: "Unknown recovery focus",
                             style = MaterialTheme.typography.labelSmall,
-                            color = SteadfastGold
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -654,57 +698,108 @@ private fun StreakHistoryBarChart(
     sessions: List<StreakSessionEntity>,
     modifier: Modifier = Modifier
 ) {
-    val barColor = SteadfastGold
-    val activeColor = SteadfastGoldDark
+    val barColor = MaterialTheme.colorScheme.primary
+    val activeColor = MaterialTheme.colorScheme.onSurfaceVariant
 
-    val now = com.steadfast.app.core.time.rememberForegroundTimeMillis(sessions.any { it.endEpochMillis == null })
-    val sessionDays = remember(sessions, now / 60_000L) {
+    val now = com.steadfast.app.core.time.rememberForegroundTimeMillis(
+        enabled = sessions.any { it.endEpochMillis == null },
+        intervalMillis = 60_000L
+    )
+    val sessionDurations = remember(sessions, now / 60_000L) {
         sessions.take(10).reversed().map { session ->
             val end = session.endEpochMillis ?: now
-            val d = StreakDurationCalculator.calculate(session.startEpochMillis, session.startZoneId, end)
-            d.totalDays to (session.endEpochMillis == null)
+            session to streakElapsedMillis(session.startEpochMillis, end)
         }
     }
 
-    val maxDays = remember(sessionDays) {
-        (sessionDays.maxOfOrNull { it.first } ?: 1L).coerceAtLeast(1L)
+    val maxDuration = remember(sessionDurations) {
+        sessionDurations.maxOfOrNull { it.second } ?: 0L
     }
 
-    val chartSummary = sessionDays.joinToString("; ") { (days, active) -> "$days elapsed days${if (active) ", active" else ", archived"}" }
-    Canvas(modifier = modifier.semantics { contentDescription = "Recent streaks: $chartSummary" }) {
-        val count = sessionDays.size
-        if (count == 0) return@Canvas
-        val totalWidth = size.width
-        val barWidth = (totalWidth / (count * 1.6f)).coerceIn(12f, 36f)
-        val space = (totalWidth - (barWidth * count)) / (count + 1)
-        val maxHeight = size.height - 24f
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM d, yyyy") }
+    val chartSummary = sessionDurations.joinToString("; ") { (session, millis) ->
+        val zone = runCatching { ZoneId.of(session.startZoneId) }.getOrElse { ZoneId.systemDefault() }
+        val date = Instant.ofEpochMilli(session.startEpochMillis).atZone(zone).format(dateFormatter)
+        "Session ${session.id}, $date, ${streakElapsedDurationLabel(millis)} elapsed${if (session.endEpochMillis == null) ", active" else ", archived"}"
+    }
+    Column(modifier = modifier) {
+        Canvas(modifier = Modifier.fillMaxWidth().weight(1f).semantics { contentDescription = "Recent streaks: $chartSummary" }) {
+            val count = sessionDurations.size
+            if (count == 0) return@Canvas
+            val barWidth = (size.width / (count * 1.6f)).coerceIn(12f, 36f)
+            val space = (size.width - (barWidth * count)) / (count + 1)
 
-        sessionDays.forEachIndexed { idx, (days, isActive) ->
-            val heightRatio = (days.toFloat() / maxDays.toFloat()).coerceIn(0.1f, 1f)
-            val barHeight = maxHeight * heightRatio
-            val left = space + idx * (barWidth + space)
-            val top = size.height - barHeight
-
-            drawRoundRect(
-                color = if (isActive) barColor else activeColor.copy(alpha = 0.7f),
-                topLeft = Offset(left, top),
-                size = Size(barWidth, barHeight),
-                cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
-            )
+            sessionDurations.forEachIndexed { idx, (session, millis) ->
+                val barHeight = size.height * streakBarHeightRatio(millis, maxDuration)
+                val left = space + idx * (barWidth + space)
+                val top = size.height - barHeight
+                drawRoundRect(
+                    color = if (session.endEpochMillis == null) barColor else activeColor.copy(alpha = 0.7f),
+                    topLeft = Offset(left, top),
+                    size = Size(barWidth, barHeight),
+                    cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
+                )
+            }
+        }
+        if (sessionDurations.isNotEmpty()) {
+            Row(modifier = Modifier.fillMaxWidth().height(20.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+                sessionDurations.forEach { (_, millis) ->
+                    Text(
+                        streakCompactDurationLabel(millis),
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }
 
+internal fun streakElapsedMillis(startEpochMillis: Long, endEpochMillis: Long): Long =
+    (endEpochMillis - startEpochMillis).coerceAtLeast(0L)
+
+internal fun streakBarHeightRatio(durationMillis: Long, maximumDurationMillis: Long): Float =
+    if (maximumDurationMillis <= 0L) 0f else (durationMillis.toDouble() / maximumDurationMillis).toFloat().coerceIn(0f, 1f)
+
+internal fun streakElapsedDurationLabel(durationMillis: Long): String {
+    val millis = durationMillis.coerceAtLeast(0L)
+    val minutes = millis / 60_000
+    val hours = millis / 3_600_000
+    val days = millis / 86_400_000
+    return when {
+        millis < 60_000 -> "${millis / 1_000} seconds"
+        millis < 3_600_000 -> "$minutes ${if (minutes == 1L) "minute" else "minutes"}"
+        millis < 86_400_000 -> "$hours ${if (hours == 1L) "hour" else "hours"}"
+        else -> "$days ${if (days == 1L) "day" else "days"}"
+    }
+}
+
+internal fun streakCompactDurationLabel(durationMillis: Long): String {
+    val millis = durationMillis.coerceAtLeast(0L)
+    return when {
+        millis < 60_000 -> "${millis / 1_000}s"
+        millis < 3_600_000 -> "${millis / 60_000}m"
+        millis < 86_400_000 -> "${millis / 3_600_000}h"
+        else -> "${millis / 86_400_000}d"
+    }
+}
+
 @Composable
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 private fun JourneyJournalTab(
     entries: List<JournalEntryEntity>,
+    searchQuery: String, selectedFilter: String,
+    onQueryChanged: (String) -> Unit, onFilterChanged: (String) -> Unit,
     onAddClick: () -> Unit,
     onEditClick: (JournalEntryEntity) -> Unit,
     onDeleteClick: (JournalEntryEntity) -> Unit
 ) {
     val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM d, yyyy • h:mm a") }
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf("ALL") }
+
+
 
     val filteredEntries = remember(entries, searchQuery, selectedFilter) {
         entries.filter { entry ->
@@ -729,19 +824,19 @@ private fun JourneyJournalTab(
         ) {
             OutlinedTextField(
                 value = searchQuery,
-                onValueChange = { searchQuery = it },
+                onValueChange = onQueryChanged,
                 placeholder = { Text("Search your entries...") },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = "Search",
-                        tint = SteadfastGold,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(18.dp)
                     )
                 },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
+                        IconButton(onClick = { onQueryChanged("") }) {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Clear search",
@@ -753,7 +848,7 @@ private fun JourneyJournalTab(
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = SteadfastGold,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -766,9 +861,10 @@ private fun JourneyJournalTab(
             Spacer(modifier = Modifier.height(10.dp))
 
             // Context filter chips
-            Row(
+            androidx.compose.foundation.layout.FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 listOf("ALL", "GENERAL", "URGE", "RESTART").forEach { filter ->
                     val isSelected = selectedFilter == filter
@@ -781,11 +877,11 @@ private fun JourneyJournalTab(
                             )
                             .border(
                                 width = 1.dp,
-                                color = if (isSelected) SteadfastGold else Color.Transparent,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
                                 shape = RoundedCornerShape(8.dp)
                             )
                             .heightIn(min = 48.dp)
-                            .selectable(selected = isSelected, role = Role.Tab, onClick = { selectedFilter = filter })
+                            .selectable(selected = isSelected, role = Role.Tab, onClick = { onFilterChanged(filter) })
                             .padding(horizontal = 12.dp, vertical = 6.dp)
                             .testTag("journal_filter_$filter")
                     ) {
@@ -793,7 +889,7 @@ private fun JourneyJournalTab(
                             text = filter,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSelected) SteadfastGold else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -884,19 +980,19 @@ private fun JourneyJournalTab(
 
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     entry.context?.let { ctx ->
-                                        val badgeColor = when (ctx) {
-                                            "RESTART" -> SteadfastGold
-                                            "URGE" -> Color(0xFFC75D4D)
-                                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                        val (badgeColor, badgeContainerColor) = when (ctx) {
+                                            "RESTART" -> MaterialTheme.colorScheme.onPrimaryContainer to MaterialTheme.colorScheme.primaryContainer
+                                            "URGE" -> MaterialTheme.colorScheme.onErrorContainer to MaterialTheme.colorScheme.errorContainer
+                                            else -> MaterialTheme.colorScheme.onSurfaceVariant to MaterialTheme.colorScheme.surfaceVariant
                                         }
                                         Text(
-                                            text = ctx,
+                                            text = ctx ?: "NONE",
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Bold,
                                             color = badgeColor,
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(4.dp))
-                                                .background(badgeColor.copy(alpha = 0.15f))
+                                                .background(badgeContainerColor)
                                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
@@ -946,20 +1042,25 @@ private fun JourneyJournalTab(
 
 @Composable
 private fun StartAgainDialog(
+    reflectionNote: String, onReflectionNoteChanged: (String) -> Unit,
+    startEpochMillis: Long,
+    onStartEpochMillisChanged: (Long) -> Unit,
+    errorMessage: String?,
+    isSubmitting: Boolean,
     onDismiss: () -> Unit,
     onConfirm: (newStartEpochMillis: Long, optionalNote: String?) -> Unit
 ) {
     val context = LocalContext.current
-    var startEpochMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    var reflectionNote by remember { mutableStateOf("") }
 
-    val currentZdt = remember(startEpochMillis) {
-        Instant.ofEpochMilli(startEpochMillis).atZone(ZoneId.systemDefault())
+    val creationZone = remember { ZoneId.systemDefault() }
+
+    val currentZdt = remember(startEpochMillis, creationZone) {
+        Instant.ofEpochMilli(startEpochMillis).atZone(creationZone)
     }
     val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM d, yyyy h:mm a") }
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!isSubmitting) onDismiss() },
         title = {
             Text(
                 text = "Begin Anew in Grace",
@@ -978,27 +1079,26 @@ private fun StartAgainDialog(
 
                 OutlinedButton(
                     onClick = {
-                        val c = Calendar.getInstance()
                         DatePickerDialog(
                             context,
                             { _, y, m, d ->
                                 TimePickerDialog(
                                     context,
                                     { _, hour, min ->
-                                        val zdt = currentZdt.withYear(y).withMonth(m + 1).withDayOfMonth(d).withHour(hour).withMinute(min)
-                                        startEpochMillis = zdt.toInstant().toEpochMilli()
+                                        val local = LocalDateTime.of(LocalDate.of(y, m + 1, d), LocalTime.of(hour, min))
+                                        onStartEpochMillisChanged(local.atZone(creationZone).toInstant().toEpochMilli())
                                     },
-                                    c.get(Calendar.HOUR_OF_DAY),
-                                    c.get(Calendar.MINUTE),
+                                    currentZdt.hour,
+                                    currentZdt.minute,
                                     false
                                 ).show()
                             },
-                            c.get(Calendar.YEAR),
-                            c.get(Calendar.MONTH),
-                            c.get(Calendar.DAY_OF_MONTH)
+                            currentZdt.year,
+                            currentZdt.monthValue - 1,
+                            currentZdt.dayOfMonth
                         ).show()
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().testTag("journey_restart_time_picker")
                 ) {
                     Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
@@ -1007,66 +1107,77 @@ private fun StartAgainDialog(
 
                 OutlinedTextField(
                     value = reflectionNote,
-                    onValueChange = { reflectionNote = it },
+                    onValueChange = onReflectionNoteChanged,
                     label = { Text("Reflection Note (Optional)") },
                     placeholder = { Text("What did you learn? Where will you lean on God today?") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(110.dp)
                 )
+                errorMessage?.let { error ->
+                    Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.testTag("journey_restart_error"))
+                }
             }
         },
         confirmButton = {
             Button(
                 onClick = { onConfirm(startEpochMillis, reflectionNote.ifBlank { null }) },
-                colors = ButtonDefaults.buttonColors(containerColor = SteadfastGold, contentColor = MaterialTheme.colorScheme.surface)
+                enabled = !isSubmitting,
+                modifier = Modifier.testTag("journey_restart_confirm"),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary)
             ) {
-                Text("Confirm & Start Again")
+                Text(if (isSubmitting) "Starting…" else "Confirm & Start Again")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(onClick = onDismiss, enabled = !isSubmitting) {
                 Text("Cancel")
             }
         }
     )
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun JournalEntryEditDialog(
-    initialBody: String,
-    initialContext: String,
+    body: String,
+    selectedContext: String?,
+    onBodyChanged: (String) -> Unit,
+    onContextChanged: (String?) -> Unit,
     title: String,
+    isSaving: Boolean,
+    errorMessage: String?,
     onDismiss: () -> Unit,
-    onSave: (body: String, context: String) -> Unit
+    onSave: (body: String, context: String?) -> Unit
 ) {
-    var body by rememberSaveable { mutableStateOf(initialBody) }
-    var selectedContext by rememberSaveable { mutableStateOf(initialContext) }
+
+
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!isSaving) onDismiss() },
         title = { Text(text = title, style = MaterialTheme.typography.titleLarge, fontFamily = FontFamily.Serif) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 // Context chips
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("GENERAL", "URGE", "RESTART").forEach { ctx ->
+                androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(null, "GENERAL", "URGE", "RESTART").forEach { ctx ->
                         val isSelected = selectedContext == ctx
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(if (isSelected) SteadfastGold.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant)
-                                .border(1.dp, if (isSelected) SteadfastGold else Color.Transparent, RoundedCornerShape(8.dp))
+                                .border(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(8.dp))
                                 .heightIn(min = 48.dp)
-                                .selectable(selected = isSelected, role = Role.RadioButton, onClick = { selectedContext = ctx })
+                                .selectable(selected = isSelected, enabled = !isSaving, role = Role.RadioButton, onClick = { onContextChanged(ctx) })
                                 .testTag("journal_context_$ctx")
                                 .padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
                             Text(
-                                text = ctx,
+                                text = ctx ?: "NONE",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isSelected) SteadfastGold else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -1074,25 +1185,28 @@ private fun JournalEntryEditDialog(
 
                 OutlinedTextField(
                     value = body,
-                    onValueChange = { body = it },
+                    onValueChange = onBodyChanged,
+                    enabled = !isSaving,
                     placeholder = { Text("Write your honest thoughts, prayers, or commitments...") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(180.dp)
+                        .testTag("journal_entry_body")
                 )
+                errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag("journal_entry_save_error")) }
             }
         },
         confirmButton = {
             Button(
                 onClick = { if (body.isNotBlank()) onSave(body, selectedContext) },
-                enabled = body.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(containerColor = SteadfastGold, contentColor = MaterialTheme.colorScheme.surface)
+                enabled = body.isNotBlank() && !isSaving,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary)
             ) {
-                Text("Save")
+                Text(if (isSaving) "Saving…" else "Save")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(onClick = onDismiss, enabled = !isSaving) {
                 Text("Cancel")
             }
         }

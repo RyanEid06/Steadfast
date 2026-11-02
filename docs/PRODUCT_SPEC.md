@@ -170,6 +170,7 @@ V1 includes a discreet Duolingo-style widget:
 
 - Shows `Day N` / current streak and a small Steadfast cross mark.
 - Optional next milestone label.
+- Never displays the selected recovery focus; its supporting line uses generic encouragement.
 - Tap opens Dashboard.
 - No live seconds on the widget; battery-friendly refresh only.
 - Must work in both light/dark launcher environments.

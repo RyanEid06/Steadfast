@@ -1,8 +1,8 @@
 {
   "project": "Steadfast Android",
   "specVersion": "1.1-hybrid-design-frozen",
-  "updated": "2026-10-29",
-  "implementationStatus": "implemented; pre-release physical-device acceptance pending",
+  "updated": "2026-11-02",
+  "implementationStatus": "implemented; final ordinary, optimized backup, native regression, breathing, fresh-entry, and ordinary process-restart acceptance passed; selected API 37 compact/theme/RTL, SAF preview, widget, icon, and catalog emulator checks passed; physical-device acceptance remains pending",
   "namespace": "com.steadfast.app",
   "versionName": "1.0",
   "versionCode": 1,
