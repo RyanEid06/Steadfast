@@ -44,3 +44,9 @@ Local ignored evidence includes `final-full-gate.log`, `final-build-lint.log`, `
 Universal APK SHA-256: `31122b328703b6d173d89072b55214169aafc11d89833cc97fd8016b277aee0e` (8,793,460 bytes). Install it **over the existing V1 app; do not uninstall**.
 
 The owner reported their physical test passed on 2026-11-02 and authorized public publication. This is owner acceptance, separate from the agent's local/API-37 emulator observations. Specific enrolled API-29 credentials, biometric hardware, spoken TalkBack and real-provider/cross-device backup failure cases have no separate agent-observed acceptance record. Existing owner data was never copied into the synthetic fixture. The release keeps the November 2 signing identity and is intended for GitHub distribution; Play Store distribution is outside this update.
+
+## Public release
+
+[Steadfast v1.1.0](https://github.com/RyanEid06/Steadfast/releases/tag/v1.1.0) was published on November 3 and independently returned by GitHub's `/releases/latest` endpoint, with draft and prerelease both false. Annotated tag `v1.1.0` points to source commit `6b3f5a853161c449991bfa27f31623e58d49bc95`. The server-reported SHA-256 digests for universal and ARM64 APKs exactly match the verified bytes above; `SHA256SUMS.txt` also matched. Release ID: `432352498`.
+
+Publication metadata is retained locally in ignored `.build-outputs/v1.1/release/release-verification.json`. GitHub Actions reports zero runs; all automated results here are local or emulator evidence. A subsequent documentation-only checkpoint records publication without changing the tagged runtime source or released APKs.
