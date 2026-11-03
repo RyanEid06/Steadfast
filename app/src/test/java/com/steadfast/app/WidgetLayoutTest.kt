@@ -35,5 +35,7 @@ class WidgetLayoutTest {
             assertTrue("Required widget line extends outside 180x110dp at font2: ${child.top}..${child.bottom} / $height", child.height > 0 && child.top >= 0 && child.bottom <= height)
             assertTrue("Widget line was vertically clipped", child.layout != null && child.layout.height <= child.height - child.compoundPaddingTop - child.compoundPaddingBottom)
         }
+        val streak = view.findViewById<TextView>(R.id.widget_streak_days)
+        assertTrue("Current streak must fit at the minimum tested width", streak.layout.getEllipsisCount(0) == 0)
     }
 }

@@ -2,7 +2,7 @@
 
 Reviewed 2026-10-29 against `main` at `ac16dad9bcea27cd50afaf8587fd8b7a34712f94`.
 
-The subsequent [canonical implementation plan](../Steadfast_V1_Bug_Fix_Implementation_Plan.md) now owns task order, acceptance and the issue ledger. This document retains the review evidence; its suggested execution outline below is historical guidance superseded by that plan.
+This is historical review evidence for the October 29 baseline, followed by the completed V1 implementation dispositions below. The completed execution plan has been retired. Use [V1.1 verification](V1_1_VERIFICATION.md), the [acceptance checklist](ACCEPTANCE_TESTS.md) and the [worklog](../CODEX_WORKLOG.md) for current status; do not execute this review as a roadmap.
 
 ## Decision
 
@@ -150,18 +150,6 @@ Additional source locations for the UI/state rows: [Bible](../app/src/main/java/
 8. **Merge related work and reduce speculative optimization.** S06/S78 share presentation ownership; S03/S82 share onboarding completion; S02/S45/S46 share accessible tokens; S25–S27 share stored-zone policy; S73–S77 share clock/threshold subscriptions. Preserve live seconds on relevant surfaces, foreground-only behavior, in-memory duration calculation, and already-working chapter/auth/restore validation. Measure performance instead of treating every 12-item recomputation as a release blocker.
 9. **Make release gates proportional.** Require accepted blockers/correctness/accessibility/privacy defects and their regressions to pass. Unreproduced risks need disposition; deliberate product behavior and deferred visual enhancements need decisions, not arbitrary “bug fixed” marks. Keep real-phone, emulator, JVM, build, and CI evidence separate; there is no GitHub Actions result for this review.
 
-## Suggested execution order after this review
-
-| Checkpoint | Scope | Required proof |
-|---|---|---|
-| 1. Entry and privacy | S81/S82, explicit focus, essential bootstrap/readiness, S01 + stale widget republish | Optimized catalog/onboarding smoke; all history/flag states; failure/relaunch/double-finish; unchanged user data; widget privacy |
-| 2. Correctness and durable interactions | S03–S06/S78, S23–S28, S41, S51–S54/S64, confirmed missing Bible actions | Loading states; modal input/Back; stored-zone edits/travel; sub-day chart; recreation/file-picker/operation regressions; current-reading set/change/clear |
-| 3. Accessibility and proven layout defects | S02, narrowed semantics/reduced-motion/typography findings, risks reproduced by the matrix | Contrast calculations and rendered checks; semantic tree + TalkBack; reachable 48dp actions; font/IME/RTL/window matrix |
-| 4. Clock/widget consistency and final bug regression | S72/S75 and supported parts of S73–S77, actual remaining accepted bugs | No ticker on unrelated routes; threshold/day rollover and shown-set behavior; prompt widget updates; existing JVM/lint/build/native regressions |
-| Later UI work | Direct chapter entry, theme preview, finish summary, action simplification, ring meaning, optional calendar-daily Scripture, password visibility/feedback, artwork polish | Owner's UI requirements and visual acceptance; no silent change to frozen behavior |
-
-Checkpoints are coherent bug-fix groups, not permission to postpone an independently confirmed blocker. Implementation can start with checkpoint 1 once this corrected scope is adopted; the original nine-phase plan should not be executed verbatim.
-
 ## Additional issue found during this review
 
 **A01 — Longest streak can remain stale across a day boundary (source-confirmed; regression reproduction pending).** `MainActivity`:426–428 calculates it with `remember(allSessions)`, while the active session keeps growing without a Room emission. Journey then receives a stale value even though the current streak updates. Include an active-streak day-boundary/resume test in the clock work and key the derived maximum to a meaningful boundary. This is absent from S01–S82.
@@ -169,3 +157,94 @@ Checkpoints are coherent bug-fix groups, not permission to postpone an independe
 ## Limits
 
 This is a full per-ID source/plan review with fresh JVM/build and R8 artifact evidence, not 82 physical-device reproductions or a claim that the app is ready for release. The layout/font/TalkBack/launcher matrix and the affected phone's optimized startup scenario remain unrun. No bugs have been marked fixed, no application change committed, and no push/release performed by this review.
+
+
+## Completed V1 implementation dispositions — historical, 2026-11-02
+
+The V1 correction implementation was published as `2c9d510807983af0dee14410d29bf2bc6aabaad3`. Its local gate passed 166 JVM/Robolectric tests across 34 suites, lint with 0 errors/40 warnings, optimized builds and four native regressions. These are V1 baseline results, not verification of the later V1.1 update. The table preserves the completed plan’s per-ID evidence, scoped runtime-risk dispositions, deferred enhancements and intentional behavior. Task numbers are historical labels only. Raw local logs remain ignored; remaining manual conditions are consolidated in [Acceptance tests](ACCEPTANCE_TESTS.md).
+
+| ID | Review | Owner / disposition | Current status and evidence |
+|---|---|---|---|
+| S01 | C | Task 3 | Verified locally in the final JVM gate; `WidgetPrivacyTest`, `ReconciliationUiDataTest`, optimized `OptimizedSmokeRunner` widget mode. |
+| S02 | C | Task 9 | Verified locally in the final JVM gate; `AccessibilityRegressionTest`, `SettingsAccessibilityTest`. |
+| S03 | C | Task 2 | Verified locally: `OnboardingRestorationTest`, `StartupReconciliationTest`, and optimized fresh entry on a new test user passed. Explicit focus, Activity recreation, exactly one initial session, journal/Bible preservation, and relaunch were observed. |
+| S04 | P | Task 1 | Verified locally in the final JVM gate; `SeedCatalogTest`, `StartupReconciliationTest`, `StartupRepairUiTest`, optimized catalog smoke. |
+| S05 | C | Task 6 | Verified locally in the final JVM gate; `BiblePresentationTest`, `BibleStateValidationTest`, navigation coverage. |
+| S06 | C | Task 4 | Verified locally in the final JVM gate; `MilestonePresentationTest`, `RootNavigationTest`. |
+| S07 | P | Task 10 | Verified locally in the final JVM gate; `DashboardCompactLayoutTest`, `LayoutRiskRegressionTest`; wide/short and font matrix results remain scoped to recorded windows. |
+| S08 | R | Task 10 | Repaired after compact Struggling actions/metadata bounds failed; `struggling-green-2026-11-01.log` 2/2 passed, including compact actions and close callbacks. Tests: `AdditionalLayoutRiskTest`, `LayoutRiskRegressionTest`; phone/IME conditions remain pending. |
+| S09 | R | Task 10 | Not reproduced as a breathing layout failure in the recorded compact/short matrix; `layout-matrix4-2026-11-01.log` passed breathing/action cases. Test: `LayoutRiskRegressionTest`; other device sizes remain pending. |
+| S10 | R | Task 10 | Not reproduced in recorded JVM bounds: `TutorialReachabilityTest.primaryActionIsFullyWithinTheUsableWindowAtTwoTimesFont` passed (1/1). Short-height/large-font device coverage remains pending. |
+| S11 | C | Task 6 | Verified locally in the final JVM gate; `BiblePresentationTest`, `BibleStateValidationTest`. |
+| S12 | P | Task 6 | Verified locally in the final JVM gate; `BiblePresentationTest`, `SettingsWorkflowTest`. |
+| S13 | P | Task 6 | Verified locally in the final JVM gate; `BiblePresentationTest`, `SettingsWorkflowTest`. |
+| S14 | C | Task 6 | Verified locally in the final JVM gate; `SettingsWorkflowTest`. |
+| S15 | C | Task 6 | Verified locally in the final JVM gate; `SettingsWorkflowTest`, `BiblePresentationTest`. |
+| S16 | R | Task 10 | Repaired with wrapping Bible filters; recorded 320dp/fontScale 2 matrix passed. Test: `LayoutMatrixRiskTest`; phone coverage remains pending. |
+| S17 | R | Task 10 | Repaired with wrapping Journal filters; recorded 320dp/fontScale 2 matrix passed. Test: `LayoutMatrixRiskTest`; phone coverage remains pending. |
+| S18 | R | Task 10 | Repaired with wrapping composer context choices; recorded 320dp/fontScale 2 matrix passed. Test: `LayoutMatrixRiskTest`; IME/phone coverage remains pending. |
+| S19 | E | Deferred to later UI/product work | Deferred: chapter direct-entry control; repeated increment/decrement remains valid and no tracking defect was established. |
+| S20 | E | Deferred to later UI/product work | Deferred: onboarding live theme preview; selected theme persists at completion, so this is a preview enhancement. |
+| S21 | E | Deferred to later UI/product work | Deferred: exact OT/NT locations in the Finish summary; selected locations are persisted. |
+| S22 | P | Task 8 | Verified locally in the final JVM gate; `SettingsAccessibilityTest`, `SettingsWorkflowTest`. |
+| S23 | C | Task 5 | Verified locally in the final JVM gate; `StreakChronologyTest`, `StreakPresentationTest`. |
+| S24 | P | Task 5 | Verified locally: `StreakPresentationTest` covers validation-before-dismissal; emulator date-picker future-date rejection retained the draft, and valid retry succeeded. Physical-device behavior remains pending. |
+| S25 | C | Task 5 | Verified locally in the final JVM gate; `StreakPresentationTest`. |
+| S26 | C | Task 5 | Verified locally in the final JVM gate; `StreakChronologyTest`. |
+| S27 | C | Task 5 | Verified locally in the final JVM gate; `StreakPresentationTest`. |
+| S28 | C | Task 5 | Verified locally in the final JVM gate; `StreakPresentationTest`. |
+| S29 | P | Task 9 | Verified locally in the final JVM gate; `AccessibilityRegressionTest`. |
+| S30 | X | Close original proposal; retain correct behavior | Closed, intentional: existing title line height plus 28dp vertical padding meets the 48dp target; no undersized-control defect was established. |
+| S31 | P | Task 9 | Verified locally in the final JVM gate; `AccessibilityRegressionTest`. |
+| S32 | P | Task 9 | Verified locally in the final JVM gate; `AccessibilityRegressionTest`. |
+| S33 | C | Task 9 | Verified locally in the final JVM gate; `AccessibilityRegressionTest`, `ReconciliationUiScreenTest`. |
+| S34 | E | Deferred to later UI/product work | Deferred: restructuring multiple Struggling exits/actions; review classified it as design preference, not broken navigation. |
+| S35 | R | Task 10 | Repaired after RED scripture metadata measured 0×0; `struggling-green-2026-11-01.log` 2/2 passed after scroll/wrap/header changes. Test: `AdditionalLayoutRiskTest`; phone coverage pending. |
+| S36 | R | Task 10 | Not reproduced in recorded 320dp/fontScale 2 layout bounds; `LayoutMatrixRiskTest` passed. Other widths/fonts/OEM behavior remain pending. |
+| S37 | R | Task 10 | Not reproduced in recorded 320dp/fontScale 2 layout bounds; `LayoutMatrixRiskTest` passed. Other widths/fonts remain pending. |
+| S38 | R | Task 10 | Not reproduced in recorded 320dp/fontScale 2 layout bounds; `LayoutMatrixRiskTest` passed. Other widths/fonts remain pending. |
+| S39 | R | Task 10 | Not reproduced in the recorded compact/large-value scenario; Journey statistic bounds passed in `struggling-green-2026-11-01.log`. Test: `AdditionalLayoutRiskTest`; other device coverage pending. |
+| S40 | R | Task 10 | Not reproduced in recorded compact/large-value metric-card bounds; `LayoutMatrixRiskTest` passed. Other widths/fonts remain pending. |
+| S41 | C | Task 5 | Verified locally in the final JVM gate; `StreakPresentationTest`. |
+| S42 | P | Task 5 | Verified locally in the final JVM gate; `StreakPresentationTest`. |
+| S43 | C | Task 9 | Verified locally in the final JVM gate; `AccessibilityRegressionTest`. |
+| S44 | P | Task 9 | Verified locally in the final JVM gate; `AccessibilityRegressionTest`; actual spoken TalkBack behavior remains a device gate. |
+| S45 | P | Task 9 | Verified locally in the final JVM gate; `AccessibilityRegressionTest`. |
+| S46 | P | Task 9 | Verified locally in the final JVM gate; `AccessibilityRegressionTest`, `LayoutMatrixRiskTest`. |
+| S47 | E | Deferred to later UI/product work | Deferred: defining the timer arc as milestone progress; review found no existing milestone contract for the seconds-cycle arc. |
+| S48 | X | Close original proposal; retain correct behavior | Closed, intentional: PRODUCT_SPEC deliberately omits minutes in all timer tiers; preserve the approved behavior. |
+| S49 | E | Deferred to later UI/product work | Deferred: calendar-deterministic verse selection; current specification does not promise a date-fixed daily verse. |
+| S50 | P | Task 7 | Verified locally: native run completed all four phases/countdowns, paused while Home was backgrounded, retained Hold progress across Activity recreation, returned to Dashboard, and preserved SQL rows and portable settings. Android's OS-managed `LAST_BACKGROUND_EPOCH` is excluded from the portable-settings byte digest. |
+| S51 | C | Task 7 | Verified locally in the final JVM gate; `UiStateRetentionTest`. |
+| S52 | C | Task 7 | Verified locally in the final JVM gate; `UiStateRetentionTest`, `TutorialReachabilityTest`. |
+| S53 | C | Task 7 | Verified locally in the final JVM gate; `JournalMutationLifecycleTest`, `LayoutMatrixRiskTest`. |
+| S54 | C | Task 7 | Verified locally in the final JVM gate; `JournalMutationLifecycleTest`, `UiStateRetentionTest`; process-death draft loss remains intentional. |
+| S55 | R | Task 10 | Actual platform fontScale 2 RED reproduced (first export field unreachable), then bounded scrolling passed Settings 5/5 in `resume-layout5-2026-11-01.log`; final actual keyboard input and enabled export action were observed at 320×568/font-scale 2. Phone coverage remains pending. |
+| S56 | E | Deferred to later UI/product work | Deferred: password visibility toggle; masking by default is retained and the toggle is a later usability enhancement. |
+| S57 | P | Task 8 | Verified locally in the final JVM gate; `SettingsWorkflowTest`. |
+| S58 | X | Close original proposal; retain correct behavior | Closed, intentional: preserve short and empty legacy import passphrases for V1 compatibility; `BackupRestoreProtocolTests` covers both. |
+| S59 | C | Task 8 | Verified locally in the final JVM gate; `SettingsWorkflowTest`, `BackupRestoreProtocolTests`. |
+| S60 | E | Deferred to later UI/product work | Deferred: persistent actionable result feedback; current operation outcomes are reported, while persistent feedback is UI polish. |
+| S61 | E | Deferred to later UI/product work | Deferred: filename/MIME filtering; preserve SAF/provider and legacy compatibility and validate backup content instead. |
+| S62 | C | Task 8 | Verified locally in the final JVM gate; `SettingsAboutTest`, `SettingsWorkflowTest`. |
+| S63 | E | Deferred to later UI/product work | Deferred: undo/destructive styling for clearing a bookmark; it changes only a recoverable reading pointer, not chapter history. |
+| S64 | C | Task 7 | Verified locally: `SettingsWorkflowTest`, `BackupRestoreProtocolTests`, optimized backup/Keystore acceptance, and actual SAF export plus import to read-only preview passed. Preview was cancelled; cross-device/provider failure coverage remains pending. |
+| S65 | C | Task 10 | Verified locally in the final JVM gate; `SettingsAboutTest`. |
+| S66 | P | Task 8 | Verified locally in the final JVM gate; `SettingsAccessibilityTest`, `BiometricPromptPolicyTest`. |
+| S67 | C | Task 9 | Verified locally in the final JVM gate; `AccessibilityRegressionTest`, `TutorialReachabilityTest`. |
+| S68 | C | Task 9 | Verified locally in the final JVM gate; `AccessibilityRegressionTest`, `TutorialReachabilityTest`. |
+| S69 | P | Task 12 | Verified locally: optimized adaptive and monochrome icon mode passed; launcher masks and OEM appearance remain device/launcher-specific. |
+| S70 | E | Deferred to later UI/product work | Deferred: replacing detailed launcher art with a simpler widget glyph; this is a branding/design choice. |
+| S71 | R | Task 10 | Minimum-widget bounds RED reproduced then repaired; `WidgetLayoutTest` RED→GREEN and optimized registered-provider check passed. Real launcher cell/font coverage remains pending. |
+| S72 | C | Task 3 | Verified locally: `WidgetPrivacyTest`, `ReconciliationUiDataTest`, and optimized registered-widget neutral `RemoteViews` check passed. Other launchers remain untested. |
+| S73 | P | Task 11 | Verified locally in the final JVM gate; `ForegroundClockTest`. |
+| S74 | P | Task 11 | Verified locally in the final JVM gate; `ForegroundClockTest`. |
+| S75 | C | Task 11 | Verified locally in the final JVM gate; `ForegroundClockTest`. |
+| S76 | P | Task 11 | Verified locally in the final JVM gate; `ForegroundClockTest`. |
+| S77 | P | Task 11 | Verified locally in the final JVM gate; `ForegroundClockTest`, `MilestonePresentationTest`. |
+| S78 | C | Task 4 | Verified locally: JVM `MilestonePresentationTest` and `RootNavigationTest` passed; emulator pointer and Back checks are recorded. Broader workflow/OEM conditions remain pending. |
+| S79 | R | Task 10 | Fixed 48dp connector gap is cosmetic and deferred under the design freeze; existing long-title bounds passed in `LayoutMatrixRiskTest`. No connector-redraw change warranted. |
+| S80 | P | Task 7 | Verified locally in the final JVM gate; `JournalMutationLifecycleTest`, `BackupRestoreProtocolTests`. |
+| S81 | C | Task 1 | Verified locally: `SeedCatalogTest` and optimized minified catalog smoke passed; deliberate corrupt-catalog mode showed retryable error, hid protected content, and preserved rows. |
+| S82 | C | Task 2 | Verified locally: final JVM startup/reconciliation tests, optimized fresh entry, and force-stop/relaunch passed. Relaunch returned to Dashboard with exactly one session and unchanged Room/DataStore hashes; this is not OS-kill recovery during an interrupted restore. |
+| A01 | Source-supported; reproduce regression | Task 11: longest-streak rollover | Focused boundary lifecycle test and final `ForegroundClockTest` passed; active longest-streak refresh on resume does not require a Room emission. Broader device timing remains pending. |

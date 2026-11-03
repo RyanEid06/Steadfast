@@ -27,7 +27,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], qualifiers = "w400dp-h780dp")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class LayoutRiskRegressionTest {
     private var databaseToClose: com.steadfast.app.data.db.SteadfastDatabase? = null
@@ -43,8 +43,15 @@ class LayoutRiskRegressionTest {
             context, com.steadfast.app.data.db.SteadfastDatabase::class.java
         ).allowMainThreadQueries().build().also { databaseToClose = it }
         var breathingClicked = false
+        val firstFrame = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val dao = object : com.steadfast.app.data.db.BibleDao by database.bibleDao() {
+            override suspend fun getAllCompletedSync(): List<com.steadfast.app.data.model.BibleChapterCompletionEntity> {
+                firstFrame.await()
+                return database.bibleDao().getAllCompletedSync()
+            }
+        }
         val repository = com.steadfast.app.data.repository.VerseRepository(
-            com.steadfast.app.data.seed.AssetSeedLoader(context), database.bibleDao()
+            com.steadfast.app.data.seed.AssetSeedLoader(context), dao
         )
         compose.setContent {
             val density = LocalDensity.current
@@ -61,6 +68,8 @@ class LayoutRiskRegressionTest {
             }
         }
 
+        compose.onNodeWithText("Loading Scripture…").assertIsDisplayed()
+        compose.runOnIdle { firstFrame.complete(Unit) }
         compose.onNodeWithTag("struggling_breathing_button").performScrollTo().assertIsDisplayed()
         assertFullyInside("struggling_breathing_button")
         compose.onNodeWithTag("struggling_breathing_button").performClick()
@@ -310,7 +319,10 @@ class LayoutRiskRegressionTest {
             }
         }
 
-        assertCompactTimerInsideWindow(listOf("years", "months", "days", "hours", "secs"))
+        val labels = listOf("years", "months", "days", "hours", "secs").map { plural ->
+            if (compose.onAllNodesWithText(plural).fetchSemanticsNodes().isNotEmpty()) plural else plural.removeSuffix("s")
+        }
+        assertCompactTimerInsideWindow(labels)
     }
 
     @Test fun breathingFinishActionRemainsReachableInShortLandscape() {

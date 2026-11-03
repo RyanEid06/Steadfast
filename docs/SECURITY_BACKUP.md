@@ -35,7 +35,7 @@ Current schema 2 contains:
 {
   "schemaVersion": 2,
   "exportedAtEpochMillis": 1793116800000,
-  "appVersion": "1.0",
+  "appVersion": "1.1.0",
   "settings": {
     "themeMode": "SYSTEM",
     "recoveryFocusId": "pornography",
@@ -44,7 +44,10 @@ Current schema 2 contains:
     "newTestamentCurrent": null,
     "appLockEnabled": false,
     "shownMilestones": "",
-    "onboardingComplete": true
+    "onboardingComplete": true,
+    "bibleTestamentFilter": 0,
+    "journeyTab": 0,
+    "journalFilter": "ALL"
   },
   "streakSessions": [],
   "journalEntries": [],
@@ -52,7 +55,7 @@ Current schema 2 contains:
 }
 ```
 
-Settings fields are optional for compatibility. If absent in a replacement import, defaults are SYSTEM theme, `pornography` focus, goal 2, no reading bookmarks, app lock off, and no shown milestones; missing `onboardingComplete` defaults to true. Schema 2 includes the shown-milestone IDs and onboarding state. There is no notification preference. The device-local background timestamp is never exported.
+Settings fields are optional for compatibility. If absent in a replacement import, defaults are SYSTEM theme, `pornography` focus, goal 2, no reading bookmarks, app lock off, and no shown milestones; missing `onboardingComplete` defaults to true. The V1.1 view choices default to All Bible books (`0`), Journey Overview (`0`) and all journal contexts (`ALL`). These optional fields do not change logical schema 2. There is no notification preference. The device-local background timestamp and Scripture-deck keys are excluded from portable backup.
 
 Before data changes, preview decrypts and validates the full payload, then the user confirms replacement. Validation checks the schema and required top-level fields, payload size (maximum 32 MiB), timestamps, unique IDs, recovery-focus/theme values, goal range 1..5, OT/NT bookmark bounds, milestone IDs, session chronology/non-overlap, journal references/context, and completed chapter bounds. A wrong passphrase, corrupt file, or unsupported schema cannot mutate live data.
 
@@ -62,6 +65,6 @@ Restore replaces user data; it does not merge histories. Before mutation, an `At
 
 On startup, recovery reads the Room token: a matching token reapplies the after-preferences; otherwise it restores the before-preferences while Room retains its prior rows. It removes the encrypted journal only after reconciliation succeeds. Recovery failure retains the journal and blocks protected content until retry succeeds. Keystore loss or unreadable recovery data fails closed; there is no plaintext rollback fallback. Widget reads and publication are serialized with restore operations and use neutral content while restore is pending.
 
-The widget's recovery-focus line is generic and never displays the selected focus. The widget continues to follow the product requirement to display an elapsed-day count and optional milestone; this is separate from the in-app lock screen. Refresh requests are made after coherent startup and successful restore/mutations. If a refresh occurs while recovery is pending, the provider publishes neutral restore copy rather than reading a partial replacement.
+The widget displays an elapsed-day count, static cross artwork and generic encouragement; it never displays the selected recovery focus. This remains separate from the in-app lock screen. Refresh requests are made after coherent startup and successful restore/mutations. If a refresh occurs while recovery is pending, the provider publishes neutral restore copy rather than reading a partial replacement.
 
-See [the reconciliation report](RECONCILIATION_REPORT.md) for verification scope and remaining platform/device checks.
+See [V1.1 verification](V1_1_VERIFICATION.md) for current upgrade/native evidence and [Acceptance tests](ACCEPTANCE_TESTS.md) for remaining platform/device checks. The [reconciliation report](RECONCILIATION_REPORT.md) records the earlier baseline only.

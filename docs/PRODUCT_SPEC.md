@@ -1,4 +1,4 @@
-# Product Specification — Steadfast V1
+# Product Specification — Steadfast V1.1
 
 ## 1. Product statement
 
@@ -71,7 +71,7 @@ Required statistics:
 
 Do not add extra KPI clutter such as reset count or average streak unless approved later.
 
-History shows archived streaks and a clear visual chart. Chart computation must be based on persisted streak sessions and cached/derived efficiently.
+History shows archived streaks and a chronological XY line chart: time horizontally, elapsed streak duration vertically, with reset drops. Small histories fit; longer histories scroll horizontally with proportional timestamps and a bounded Canvas for decades of data. All existing sessions remain stored.
 
 ## 7. Journal
 
@@ -89,15 +89,15 @@ Must be reachable from Dashboard in one tap.
 Screen behavior:
 
 1. Enter a calmer full-screen state with minimal UI.
-2. Show a relevant Scripture verse/reference.
-3. Prefer verses from Bible chapters the user has already marked completed.
-4. If that pool is too small/empty, fall back to the curated global reference catalog.
+2. Show a complete locally bundled WEB Scripture passage and exact reference.
+3. Prioritize unused passages from Bible chapters the user has already marked completed.
+4. When that unused subset is exhausted, continue through the other unused passages in the full catalog.
 5. Actions:
    - Another verse
    - Take a deep breath (simple guided timer/animation, not medical treatment)
    - Write a note
    - View my progress
-6. Avoid repeating the same verse until the eligible pool has been substantially cycled.
+6. Persist a 500-passage deck across process restarts. Exhaust all unused passages before repeating; completed chapters only prioritize unused passages, and cycle boundaries never immediately repeat.
 
 ## 9. Milestones
 
@@ -152,24 +152,24 @@ V1 does **not** record daily goal completion because chapter timestamps are inte
 
 ## 12. Verse library
 
-Long-term target: 1,000+ curated verse records spanning OT and NT, including encouragement, warning, repentance, perseverance, love, self-control, peace, temptation, forgiveness, and hope.
+V1.1 bundles 500 curated public-domain World English Bible passages spanning OT and NT, including temptation, self-control, strength, repentance, forgiveness, prayer, peace, perseverance and hope.
 
-Each verse record should include:
+Every entry includes:
 
-- canonical reference
-- testament/book/chapter
-- thematic tags
-- optional importance/popularity rank
-- optional text only when legally licensed or supplied by project owner
+- canonical unique ID
+- book ID/name, chapter and start/end verse metadata
+- display reference and exact complete WEB text
+- testament and relevant thematic tags
 
-The current app displays bundled verified public-domain WEB quotations paired with their exact references. Missing text uses a neutral reference-only reading prompt. NLT remains a possible licensed future addition; do not scrape or bulk-copy it, or label WEB text as NLT. The larger verse-library target is future scope, not a claim about the current bundled catalog.
+The collection covers all 66 books (249 OT / 251 NT). Every text/reference pairing is checked against retained publisher source; the sanctuary has no reference-only fallback. The persistent unused deck prioritizes completed chapters without repeating before exhaustion. Licensed translations such as NLT require permission; never scrape their text or label WEB text as NLT.
 
 ## 13. Home-screen widget
 
-V1 includes a discreet Duolingo-style widget:
+The home-screen widget keeps the app's navy/gold cross-and-landscape identity:
 
-- Shows `Day N` / current streak and a small Steadfast cross mark.
-- Optional next milestone label.
+- Shows a large current elapsed-day count and a static illuminated cross scene.
+- Brightness increases with the current streak and returns to dim after a restart; no animation or live seconds.
+- A generic encouragement line supports the count; secondary text may be hidden or ellipsized to keep the count readable.
 - Never displays the selected recovery focus; its supporting line uses generic encouragement.
 - Tap opens Dashboard.
 - No live seconds on the widget; battery-friendly refresh only.
@@ -191,6 +191,8 @@ Include:
 - Import backup
 - Replay tutorial
 - About / privacy statement
+
+Bible testament selection, Journey tab and journal context filter persist across process restarts and portable backups. Search text, private drafts, dialogs and animation progress remain transient.
 
 Do **not** add an “Erase all data” button in V1.
 

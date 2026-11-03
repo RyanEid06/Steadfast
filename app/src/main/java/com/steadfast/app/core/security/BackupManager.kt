@@ -56,7 +56,10 @@ data class BackupSettingsPayload(
     val newTestamentCurrent: ReadingLocationPayload? = null,
     val appLockEnabled: Boolean? = null,
     val shownMilestones: String? = null,
-    val onboardingComplete: Boolean? = null
+    val onboardingComplete: Boolean? = null,
+    val bibleTestamentFilter: Int? = null,
+    val journeyTab: Int? = null,
+    val journalFilter: String? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -418,6 +421,9 @@ class BackupManager(
             themeMode?.let { require(it in setOf("SYSTEM", "LIGHT", "DARK")) { "Invalid theme." } }
             recoveryFocusId?.let(::focus)
             readingGoalMinimum?.let { require(it in 1..5) { "Reading goal must be between 1 and 5." } }
+            bibleTestamentFilter?.let { require(it in 0..2) { "Invalid Bible filter." } }
+            journeyTab?.let { require(it in 0..2) { "Invalid Journey tab." } }
+            journalFilter?.let { require(it in setOf("ALL", "GENERAL", "URGE", "RESTART")) { "Invalid journal filter." } }
             oldTestamentCurrent?.let { chapter(it.bookId, it.chapter, 1..39) }
             newTestamentCurrent?.let { chapter(it.bookId, it.chapter, 40..66) }
             shownMilestones?.takeIf { it.isNotEmpty() }?.split(",")?.let { ids ->
@@ -461,7 +467,8 @@ class BackupManager(
         themeMode, recoveryFocusId, readingGoalMinimum,
         oldTestamentCurrent?.let { ReadingLocationPayload(it.bookId, it.chapter) },
         newTestamentCurrent?.let { ReadingLocationPayload(it.bookId, it.chapter) },
-        appLockEnabled, shownMilestones.joinToString(","), onboardingComplete
+        appLockEnabled, shownMilestones.joinToString(","), onboardingComplete,
+        bibleTestamentFilter, journeyTab, journalFilter
     )
 
     private fun BackupSettingsPayload.toSnapshot() = UserPreferencesSnapshot(
@@ -472,7 +479,10 @@ class BackupManager(
         newTestamentCurrent = newTestamentCurrent?.let { ReadingLocation(it.bookId, it.chapter) },
         appLockEnabled = appLockEnabled ?: false,
         shownMilestones = shownMilestones.orEmpty().split(",").filter { it.isNotEmpty() }.toSet(),
-        onboardingComplete = onboardingComplete ?: true
+        onboardingComplete = onboardingComplete ?: true,
+        bibleTestamentFilter = bibleTestamentFilter ?: 0,
+        journeyTab = journeyTab ?: 0,
+        journalFilter = journalFilter ?: "ALL"
     )
 
     private fun randomBytes(size: Int) = ByteArray(size).also { SecureRandom().nextBytes(it) }

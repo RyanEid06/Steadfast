@@ -1,6 +1,24 @@
-# V1 acceptance checklist
+# Steadfast acceptance checklist
 
 Use this checklist for an acceptance run. A listed test is not considered passed merely because it is specified here. Local automated evidence and remaining manual/device checks are summarized below.
+
+## V1.1 update evidence — 2026-11-03
+
+- [x] Delivered November 2 V1 installs and accepts V1.1 directly with `install -r`, the same package, UID and signing certificate, code 1 → 2, and version 1.0 → 1.1.0.
+- [x] All original synthetic sessions/start dates/restarts/focuses, journal rows, completed chapters, bookmarks/current reading, goal, preferences/theme, App Lock and committed backup state survive. Room remains schema 1 without migration or destructive fallback.
+- [x] Preserved App Lock hides protected content after updating; native unavailable-authentication retry/recreation passes.
+- [x] Exactly 500 offline WEB passages have complete verified source text and unique canonical metadata; no network permission or reference-only fallback.
+- [x] Exhaustive deck tests cover completed-chapter priority, full cycles, boundary non-repeat, real DataStore reopening and concurrent draws. Native process relaunch preserves choices and unused-card history.
+- [x] Bible testament and Journey/journal choices persist through actual application force-stop/relaunch.
+- [x] Journey geometry and native horizontal dragging show chronological growth, both historical resets and retained statistics; compact histories fit without scrolling.
+- [x] Longest real passage layout tests retain every character and reachable final line/actions in ordinary and narrow/font-scale-2 viewports.
+- [x] Static cross widget brightness/reset/privacy/restore/layout tests and registered native RemoteViews pass; its provider identity is preserved.
+- [x] November 3 host gate passed: 191 debug JVM tests across 40 classes, zero failures/errors/skips; lint 0 errors/41 warnings; debug, private release and debug instrumentation APKs assembled. Release JVM tests are not configured.
+- [x] All seven native API 37 tests passed, including the three journal-dialog instrumentation cases. Afterward, the optimized candidate was reinstalled and the original synthetic rows/settings and owner-0 database/WAL/SHM/preferences hashes were verified unchanged. See [V1.1 verification](V1_1_VERIFICATION.md).
+- [x] Owner reports physical testing passed and authorizes public release (2026-11-02).
+- [ ] Separately recorded enrolled API-29 credentials/biometric hardware, native ARM64, OEM launcher and spoken TalkBack acceptance; owner signoff is not an agent-observed test record for each platform case.
+
+Detailed source, signing, fixture and artifact evidence is in [V1.1 verification](V1_1_VERIFICATION.md). The historical results below remain separate from the current update.
 
 ## Offline and privacy
 
@@ -46,8 +64,8 @@ Use this checklist for an acceptance run. A listed test is not considered passed
 ## Struggling flow
 
 - [ ] Reachable in one Dashboard action.
-- [ ] Prefers references from completed chapters when available and falls back gracefully.
-- [ ] Another Verse avoids immediate repetition.
+- [ ] Shows complete locally stored WEB text, prioritizing only unused completed-chapter passages before the wider unused catalog.
+- [ ] Another Verse exhausts all 500 entries before a fresh shuffled cycle, with no immediate cycle-boundary repeat; deck state survives reopening.
 - [ ] Breathing, Write Note, and View Progress actions work.
 
 ## Backup and restore
@@ -73,7 +91,7 @@ Use this checklist for an acceptance run. A listed test is not considered passed
 - [ ] Both themes are coherent; text remains legible at common font scales and in landscape.
 - [ ] Reduced-motion preference is respected; no dead buttons, placeholder pages, permanent fake data, or repeated loading flicker.
 
-## Current bug-fix acceptance status
+## Historical V1 bug-fix acceptance status
 
 Final local bug-fix evidence, 2026-11-02:
 
@@ -85,7 +103,7 @@ Final local bug-fix evidence, 2026-11-02:
 - Compact 640×360/font-scale 2 emulator layouts passed in light, dark, and RTL, with live Dashboard units and the action control present. At 320×568/font-scale 2, actual SAF export produced an encrypted backup; selecting it through the document picker reached the expected read-only preview. The preview was cancelled, so a real-provider restore was not performed.
 - No GitHub CI result is claimed.
 
-Keep the checklist above unchecked until its individual acceptance condition is observed. Phone/API 29, biometric hardware, real cross-device SAF/provider and OEM behavior, true OS process-kill recovery, spoken TalkBack, and native ARM64 acceptance remain separate manual/device gates. The current checkpoint and known failures are in [the worklog](../CODEX_WORKLOG.md); the canonical scope and per-issue ledger are in the [13-task implementation plan](../Steadfast_V1_Bug_Fix_Implementation_Plan.md). Earlier results below are historical and do not substitute for current or manual acceptance.
+Keep the general checklist unchecked until its individual acceptance condition is observed. Phone/API 29, biometric hardware, real cross-device SAF/provider and OEM behavior, true OS process-kill recovery during restore, Keystore invalidation, spoken TalkBack, and native ARM64 acceptance remain separate manual/device gates. The current checkpoint and known failures are in [the worklog](../CODEX_WORKLOG.md); the retired V1 plan's per-issue disposition ledger is preserved in the [historical issue review](ISSUE_PLAN_REVIEW_2026_10_29.md#completed-v1-implementation-dispositions--historical-2026-11-02). Earlier results below do not substitute for current or manual acceptance.
 
 ## Historical local evidence — reconciliation baseline, 2026-10-29
 

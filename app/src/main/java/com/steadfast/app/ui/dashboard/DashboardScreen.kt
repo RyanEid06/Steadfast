@@ -346,7 +346,7 @@ private fun DashboardScriptureCard(
             }
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = dailyEncouragement.text?.let { "“$it”" } ?: "Open your Bible to ${dailyEncouragement.reference}.",
+                text = dailyEncouragement.text?.let { "“$it”" } ?: "Scripture text unavailable.",
                 style = MaterialTheme.typography.bodyMedium,
                 fontFamily = FontFamily.Serif,
                 color = MaterialTheme.colorScheme.onSurface,

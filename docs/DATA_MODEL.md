@@ -36,6 +36,11 @@ User settings are stored as preference keys and read together by `snapshotUserSe
 - `oldTestamentCurrent` and `newTestamentCurrent`: optional `{ bookId, chapter }` bookmarks, each validated against its testament.
 - `shownMilestones: Set<String>`: milestone IDs already celebrated for the current streak session. The set is cleared when a session begins or restarts.
 - `lastBackgroundEpoch: Long`: device-local app-lock timing state; excluded from portable backup.
+- `bibleTestamentFilter: Int`: All / OT / NT (`0..2`, default `0`).
+- `journeyTab: Int`: Overview / History / Journal (`0..2`, default `0`).
+- `journalFilter: String`: `ALL`, `GENERAL`, `URGE`, or `RESTART` (default `ALL`).
+
+The three V1.1 view choices are optional in portable schema-2 backups; absent fields use these defaults. Existing preference keys and Room schema remain unchanged. Device-local `verse_deck_used` and `verse_deck_last` store canonical passage IDs: unused completed-chapter passages have priority, then all other unused passages. A new cycle begins only after all 500 are used and excludes the previous final passage from its first draw. These new keys initialize lazily without resetting other preferences and are excluded from portable backups.
 
 ## Bundled catalog models
 
@@ -44,7 +49,8 @@ User settings are stored as preference keys and read together by `snapshotUserSe
 - Bible books and chapter counts (`bible_books.json`).
 - Recovery focus IDs and labels (`recovery_focuses.json`).
 - Milestone IDs, kinds, values, and titles (`milestones.json`).
-- Verse-reference catalog and scale comparisons.
+- `ScriptureEntry`: canonical ID, book ID/name, chapter, verse start/end, reference, exact WEB text, testament and themes (`scripture_catalog.json`, exactly 500 passages). `scripture_verse_counts.json` supplies canonical chapter/verse bounds. Publisher source, curated references and import verification are retained under `data/scripture_source/`, `data/scripture_curation.tsv` and `tools/import_scripture.py`.
+- Legacy verse-reference catalog and scale comparisons.
 
 ## Derived values
 

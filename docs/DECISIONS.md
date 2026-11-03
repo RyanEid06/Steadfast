@@ -1,6 +1,6 @@
 # Product and design decisions
 
-This log records the current frozen V1 direction. Implementation details are in [Architecture](ARCHITECTURE.md).
+This log records the frozen product direction and focused V1.1 additions. Implementation details are in [Architecture](ARCHITECTURE.md).
 
 ## Product
 
@@ -11,15 +11,16 @@ This log records the current frozen V1 direction. Implementation details are in 
 - Preserve restart history; show current and longest streak as headline statistics.
 - Exact streak date and time, with elapsed duration plus calendar-accurate months/years based on the stored start zone.
 - Milestones: 1, 3, 7, 14, 21, 30, 60, and 90 elapsed days; 3, 6, and 9 calendar months; and 1 calendar year.
-- Full personal journal. The “I’m struggling” flow prioritizes Scripture references from completed chapters when available.
+- Full personal journal. The sanctuary uses a persistent exhaustive 500-passage WEB deck; completed chapters prioritize only unused entries, and a cycle boundary cannot immediately repeat the last passage.
 - Bible tracking uses the 66-book Protestant canon, chapter completion, book/testament/whole-Bible progress, and at most one current-reading bookmark per testament. No Bible streak.
 - Bible text is not embedded wholesale until rights are resolved.
 - Reading goal is a motivational minimum of **1–5 chapters**, not a measured daily completion metric.
 - System, dark, and light themes.
 - App lock uses Android biometrics/device credentials; no custom in-app PIN.
-- Home-screen widget is included.
+- The home-screen widget uses static cross/streak artwork that brightens with the current streak and resets to dim. Existing focus privacy and restore gates remain authoritative.
+- The chronological Journey chart, durable Bible/Journey/journal view choices and full offline WEB passages are focused V1.1 changes; package, signing identity, Room schema 1 and existing user storage remain compatible with the delivered private V1.
 - English for V1; modern Android phones with API 29 minimum.
-- Private APK testing comes before any public release decision; Play Store publication is not a V1 goal.
+- Public GitHub V1.1 publication is authorized after private upgrade validation and owner physical-test acceptance. Play Store publication is outside this update.
 
 ## Navigation and visual direction
 

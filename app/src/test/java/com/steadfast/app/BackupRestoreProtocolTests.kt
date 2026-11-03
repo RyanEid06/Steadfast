@@ -80,6 +80,26 @@ class BackupRestoreProtocolTests {
         Unit
     }
 
+    @Test fun v11ViewChoicesRoundTripAndLegacyBackupsHaveSafeDefaults() = runBlocking {
+        val choices = settings.copy(bibleTestamentFilter = 2, journeyTab = 1, journalFilter = "URGE")
+        prefs.replaceUserSettings(choices)
+        val output = ByteArrayOutputStream()
+        manager.exportBackup(output, passphrase)
+        prefs.replaceUserSettings(UserPreferencesSnapshot())
+        manager.importBackup(output.toByteArray().inputStream(), passphrase).getOrThrow()
+        assertEquals(choices, prefs.snapshotUserSettings())
+        manager.restorePayloadWithRollback(payload.copy(settings = payload.settings.copy(
+            bibleTestamentFilter = null, journeyTab = null, journalFilter = null
+        ))).getOrThrow()
+        assertEquals(0, prefs.snapshotUserSettings().bibleTestamentFilter)
+        assertEquals(0, prefs.snapshotUserSettings().journeyTab)
+        assertEquals("ALL", prefs.snapshotUserSettings().journalFilter)
+        assertThrows(IllegalArgumentException::class.java) {
+            manager.validatePayload(payload.copy(settings = payload.settings.copy(bibleTestamentFilter = 3)))
+        }
+        Unit
+    }
+
     @Test fun currentRoundtripRestoresAllFieldsAndPreviewIsReadOnly() = runBlocking {
         val output = ByteArrayOutputStream()
         manager.exportBackup(output, passphrase)

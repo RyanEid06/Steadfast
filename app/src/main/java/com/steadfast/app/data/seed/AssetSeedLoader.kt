@@ -11,6 +11,7 @@ class CatalogLoadException(val assetName: String, cause: Exception) :
 class AssetSeedLoader(context: Context, private val assets: (String) -> String = { name ->
     context.assets.open(name).bufferedReader().use { it.readText() }
 }) {
+    val applicationContext: Context = context.applicationContext
     private val moshi = Moshi.Builder().build()
 
     private fun <T> read(name: String, parse: (String) -> T): T = try {
@@ -55,6 +56,45 @@ class AssetSeedLoader(context: Context, private val assets: (String) -> String =
             }
         }
     }
+    private val scriptureVerseCounts by lazy {
+        read("scripture_verse_counts.json") { json ->
+            val countsType = Types.newParameterizedType(List::class.java, Int::class.javaObjectType)
+            val type = Types.newParameterizedType(Map::class.java, String::class.java, countsType)
+            requireNotNull(moshi.adapter<Map<String, List<Int>>>(type).fromJson(json)).also { counts ->
+                require(counts.keys == books.map { it.id.toString() }.toSet())
+                require(books.all { book -> counts.getValue(book.id.toString()).let { chapters ->
+                    chapters.size == book.chapters && chapters.all { it in 1..176 }
+                } })
+            }
+        }
+    }
+    private val scripture by lazy {
+        read("scripture_catalog.json") { json ->
+            val type = Types.newParameterizedType(List::class.java, ScriptureEntry::class.java)
+            requireNotNull(moshi.adapter<List<ScriptureEntry>>(type).fromJson(json)).also { items ->
+                require(items.size == 500 && items.map { it.id }.toSet().size == 500)
+                require(items.map { it.reference }.toSet().size == 500 && items.map { it.text }.toSet().size == 500)
+                require(items.map { it.bookId }.toSet() == (1..66).toSet())
+                val usedVerses = mutableSetOf<Triple<Int, Int, Int>>()
+                val codes = "GEN EXO LEV NUM DEU JOS JDG RUT 1SA 2SA 1KI 2KI 1CH 2CH EZR NEH EST JOB PSA PRO ECC SNG ISA JER LAM EZK DAN HOS JOL AMO OBA JON MIC NAM HAB ZEP HAG ZEC MAL MAT MRK LUK JHN ACT ROM 1CO 2CO GAL EPH PHP COL 1TH 2TH 1TI 2TI TIT PHM HEB JAS 1PE 2PE 1JN 2JN 3JN JUD REV".split(' ')
+                items.forEach { item ->
+                    val book = requireNotNull(books.find { it.id == item.bookId })
+                    require(item.book == book.name && item.testament == book.testament)
+                    require(item.chapter in 1..book.chapters)
+                    require(item.verseStart > 0 && item.verseEnd >= item.verseStart &&
+                        item.verseEnd <= scriptureVerseCounts.getValue(book.id.toString())[item.chapter - 1])
+                    val numbers = listOf(item.chapter, item.verseStart, item.verseEnd).joinToString("-") { it.toString().padStart(3, '0') }
+                    require(item.id == "web-${codes[item.bookId - 1]}-$numbers")
+                    val range = if (item.verseEnd == item.verseStart) "${item.verseStart}" else "${item.verseStart}-${item.verseEnd}"
+                    require(item.reference == "${book.name} ${item.chapter}:$range")
+                    require(item.text.isNotBlank() && item.text == item.text.trim() && '<' !in item.text)
+                    require(item.tags.isNotEmpty() && item.tags.distinct().size == item.tags.size &&
+                        item.tags.all { Regex("[a-z]+(?:-[a-z]+)*").matches(it) })
+                    require((item.verseStart..item.verseEnd).all { usedVerses.add(Triple(item.bookId, item.chapter, it)) })
+                }
+            }
+        }
+    }
     private val comparisons by lazy {
         read("scale_comparisons.json") { json ->
             val type = Types.newParameterizedType(List::class.java, ScaleComparison::class.java)
@@ -75,10 +115,11 @@ class AssetSeedLoader(context: Context, private val assets: (String) -> String =
     }
 
     // A failed lazy initializer is retried; only validated successful catalogs are shared.
-    fun preload() { loadBibleBooks(); loadRecoveryFocuses(); loadMilestones(); loadVerseCatalog(); getScaleComparisons() }
+    fun preload() { loadBibleBooks(); loadRecoveryFocuses(); loadMilestones(); loadVerseCatalog(); loadScriptureCatalog(); getScaleComparisons() }
     fun loadBibleBooks(): List<BibleBook> = books
     fun loadRecoveryFocuses(): List<RecoveryFocus> = focuses
     fun loadMilestones(): List<MilestoneDefinition> = milestones
     fun loadVerseCatalog(): VerseReferenceCatalog = verses
+    fun loadScriptureCatalog(): List<ScriptureEntry> = scripture
     fun getScaleComparisons(): List<ScaleComparison> = comparisons
 }

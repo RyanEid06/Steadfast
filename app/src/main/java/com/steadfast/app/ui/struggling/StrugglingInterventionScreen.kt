@@ -86,10 +86,24 @@ fun StrugglingInterventionScreen(
     val scope = rememberCoroutineScope()
     val reducedMotion = com.steadfast.app.core.design.rememberReducedMotion()
     var currentVerse by remember { mutableStateOf<CuratedVerse?>(null) }
+    var verseLoading by remember { mutableStateOf(true) }
+    var verseError by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
-        currentVerse = verseRepository.getNextVerse()
+    suspend fun loadVerse() {
+        verseLoading = true
+        verseError = null
+        try {
+            currentVerse = verseRepository.getNextVerse()
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            verseError = "Could not load Scripture. Please try another verse."
+        } finally {
+            verseLoading = false
+        }
     }
+
+    LaunchedEffect(verseRepository) { loadVerse() }
 
     BoxWithConstraints(
         modifier = modifier
@@ -121,11 +135,10 @@ fun StrugglingInterventionScreen(
         )
 
         Column(
-            modifier = (if (compactLayout) {
-                Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
-            } else {
-                Modifier.fillMaxSize()
-            }).padding(horizontal = 24.dp, vertical = 14.dp),
+            modifier = Modifier.fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .heightIn(min = if (compactLayout) 0.dp else maxHeight)
+                .padding(horizontal = 24.dp, vertical = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = if (compactLayout) Arrangement.Top else Arrangement.SpaceBetween
         ) {
@@ -205,10 +218,9 @@ fun StrugglingInterventionScreen(
                 label = "verse_animation",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .then(if (compactLayout) Modifier else Modifier.weight(1f, fill = false))
             ) { verse ->
                 if (verse == null) {
-                    Text("Loading Scripture…", color = Color.White, modifier = Modifier.padding(24.dp))
+                    Text(verseError ?: "Loading Scripture…", color = Color.White, modifier = Modifier.padding(24.dp))
                 } else {
                     Card(
                         shape = RoundedCornerShape(22.dp),
@@ -255,7 +267,7 @@ fun StrugglingInterventionScreen(
 
                             Spacer(modifier = Modifier.height(14.dp))
 
-                            val verseText = verse.text?.let { "“$it”" } ?: "Open your Bible to ${verse.reference}."
+                            val verseText = "“${requireNotNull(verse.text)}”"
 
                             Text(
                                 text = verseText,
@@ -269,6 +281,10 @@ fun StrugglingInterventionScreen(
                         }
                     }
                 }
+            }
+
+            if (verseError != null && currentVerse != null) {
+                Text(verseError!!, color = Color.White, style = MaterialTheme.typography.bodySmall)
             }
 
             // 4 Full-Width Action Rows
@@ -298,9 +314,10 @@ fun StrugglingInterventionScreen(
 
                 // Action 2: Another Verse
                 OutlinedButton(
+                    enabled = !verseLoading,
                     onClick = {
                         scope.launch {
-                            currentVerse = verseRepository.getNextVerse()
+                            loadVerse()
                         }
                     },
                     modifier = Modifier

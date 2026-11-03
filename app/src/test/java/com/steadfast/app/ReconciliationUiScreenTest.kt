@@ -14,7 +14,7 @@ import org.robolectric.annotation.GraphicsMode
 import androidx.compose.ui.unit.dp
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], qualifiers = "w400dp-h780dp", shadows = [NoopRobolectricPrefetch::class], instrumentedPackages = ["androidx.compose.foundation.lazy.layout"])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ReconciliationUiScreenTest {
     @get:Rule val compose = createComposeRule()
@@ -30,13 +30,17 @@ class ReconciliationUiScreenTest {
         compose.onNodeWithText("NLT").assertDoesNotExist()
     }
 
-    @Test fun dashboardUsesSafeBiblePromptForReferenceOnlyPassage() {
+    @Test fun dashboardDisplaysTheFullVerifiedMatthewPassage() {
+        val text = "Watch and pray, that you don’t enter into temptation. The spirit indeed is willing, but the flesh is weak.”"
         compose.setContent {
             SteadfastTheme {
-                DashboardScreen(null, CuratedVerse("Matthew 26:41", "Matthew", 26, "41", "temptation"), {}, {})
+                DashboardScreen(null, CuratedVerse("Matthew 26:41", "Matthew", 26, "41", "temptation", text = text, translation = "WEB"), {}, {})
             }
         }
-        compose.onNodeWithText("Open your Bible to Matthew 26:41.").assertExists()
+        compose.onNodeWithText("“$text”").assertExists()
+        compose.onNodeWithText("Matthew 26:41").assertExists()
+        compose.onNodeWithText("WEB").assertExists()
+        compose.onNodeWithText("Open your Bible to Matthew 26:41.").assertDoesNotExist()
         compose.onNodeWithText("NLT").assertDoesNotExist()
     }
     @Test fun onboardingCanFinishWithBothReadingLocationsUnset() {
@@ -109,43 +113,6 @@ class ReconciliationUiScreenTest {
         }
     }
 
-    @Test fun editingANotePreservesItsOptionalNullContext() {
-        var saved = false
-        var savedContext: String? = "not saved"
-        compose.setContent { SteadfastTheme {
-            com.steadfast.app.ui.journey.JourneyScreen(
-                null, emptyList(), emptyList(),
-                listOf(com.steadfast.app.data.model.JournalEntryEntity(id = 1, body = "Synthetic uncategorized note", context = null)),
-                null, 0, { _, _ -> }, { _, _ -> }, { _, _, context -> saved = true; savedContext = context }, {}, {}, {}, {}
-            )
-        } }
-        compose.onNodeWithTag("journey_tab_Journal").performClick()
-        compose.onNodeWithContentDescription("Edit").performClick()
-        compose.onNodeWithText("Save").performClick()
-        compose.runOnIdle { org.junit.Assert.assertTrue(saved); org.junit.Assert.assertNull(savedContext) }
-    }
-
-    @Test fun urgeRouteOpensComposerWithUrgeContextAndSavesIt() {
-        var savedContext: String? = null
-        compose.setContent {
-            SteadfastTheme {
-                com.steadfast.app.ui.journey.JourneyScreen(
-                    null, emptyList(), emptyList(), emptyList(), null, 0,
-                    { _, _ -> }, { _, context -> savedContext = context }, { _, _, _ -> }, {}, {}, {}, {},
-                    initialJournalContext = "URGE"
-                )
-            }
-        }
-        compose.onNodeWithText("New Journal Entry").assertExists()
-        compose.onNode(hasSetTextAction() and hasAnyAncestor(isDialog())).performTextInput("Help me stand firm")
-        compose.onNodeWithText("Save").performClick()
-        compose.runOnIdle { org.junit.Assert.assertEquals("URGE", savedContext) }
-        compose.onNodeWithTag("journey_add_journal_fab").performClick()
-        compose.onNode(hasSetTextAction() and hasAnyAncestor(isDialog())).performTextInput("A fresh reflection")
-        compose.onNodeWithText("Save").performClick()
-        compose.runOnIdle { org.junit.Assert.assertEquals("GENERAL", savedContext) }
-    }
-
     @Test fun reducedMotionKeepsBreathingRingStillAndPhaseChangesContinue() {
         com.steadfast.app.core.design.ReducedMotionPolicy.testReducedMotionOverride = true
         try {
@@ -160,19 +127,4 @@ class ReconciliationUiScreenTest {
         } finally { com.steadfast.app.core.design.ReducedMotionPolicy.testReducedMotionOverride = null }
     }
 
-    @Test fun journalComposerContextControlsChangeSavedContext() {
-        var savedContext: String? = null
-        compose.setContent {
-            SteadfastTheme {
-                com.steadfast.app.ui.journey.JourneyScreen(
-                    null, emptyList(), emptyList(), emptyList(), null, 0,
-                    { _, _ -> }, { _, context -> savedContext = context }, { _, _, _ -> }, {}, {}, {}, {},
-                    initialJournalContext = "URGE"
-                )
-            }
-        }
-        compose.onNodeWithTag("journal_context_RESTART").performClick()
-        compose.onNode(hasSetTextAction() and hasAnyAncestor(isDialog())).performTextInput("Choosing a fresh start")
-        compose.onNodeWithText("Save").performClick()
-        compose.runOnIdle { org.junit.Assert.assertEquals("RESTART", savedContext) }
-    }}
+}

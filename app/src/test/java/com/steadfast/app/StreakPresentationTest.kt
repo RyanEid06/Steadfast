@@ -3,6 +3,13 @@ package com.steadfast.app
 import android.content.Context
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -15,9 +22,9 @@ import com.steadfast.app.data.datastore.SteadfastPreferences
 import com.steadfast.app.data.model.RecoveryFocus
 import com.steadfast.app.data.model.StreakSessionEntity
 import com.steadfast.app.data.db.SteadfastDatabase
-import com.steadfast.app.ui.journey.streakBarHeightRatio
 import com.steadfast.app.ui.journey.streakElapsedDurationLabel
 import com.steadfast.app.ui.journey.JourneyScreen
+import com.steadfast.app.ui.journey.JourneyTimelineChart
 import com.steadfast.app.ui.settings.SettingsScreen
 import com.steadfast.app.ui.theme.SteadfastTheme
 import com.steadfast.app.ui.theme.ThemeSetting
@@ -93,7 +100,7 @@ class StreakPresentationTest {
             }
         }
         compose.onNodeWithTag("journey_tab_History").performClick()
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText("ARCHIVED STREAKS"))
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Jan 1, 2024 — Jan 1, 2024"))
         val rendered = compose.onRoot(useUnmergedTree = true).fetchSemanticsNode().allText()
         assertTrue(rendered.joinToString(" | "), rendered.any { it.contains("Jan 1, 2024 — Jan 1, 2024") })
         compose.onNodeWithText("Unknown recovery focus").assertExists()
@@ -110,7 +117,6 @@ class StreakPresentationTest {
             id = 1, recoveryFocusId = "gaming", startEpochMillis = now - 6 * 60 * 60_000,
             startZoneId = "UTC", endEpochMillis = now
         )
-        assertEquals(1f / 24f, streakBarHeightRatio(15 * 60_000L, 6 * 60 * 60_000L), 0.0001f)
         assertEquals("15 minutes", streakElapsedDurationLabel(15 * 60_000L))
         assertEquals("6 hours", streakElapsedDurationLabel(6 * 60 * 60_000L))
         compose.setContent {
@@ -124,14 +130,58 @@ class StreakPresentationTest {
         }
 
         compose.onNodeWithTag("journey_tab_History").performClick()
-        val chartDescription = compose.onNode(hasContentDescription("Recent streaks", substring = true), useUnmergedTree = true)
+        val chartDescription = compose.onNodeWithTag("journey_timeline", useUnmergedTree = true)
             .fetchSemanticsNode().config[SemanticsProperties.ContentDescription].joinToString()
         assertTrue(chartDescription, chartDescription.contains("15 minutes"))
         assertTrue(chartDescription, chartDescription.contains("6 hours"))
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText("ARCHIVED STREAKS"))
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Unknown recovery focus"))
         compose.onAllNodesWithText("Unknown recovery focus").assertCountEquals(1)
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Gaming"))
         compose.onNodeWithText("Gaming").assertExists()
         compose.onNodeWithText("unknown-sensitive-id").assertDoesNotExist()
+    }
+
+    @Test
+    @Config(qualifiers = "w400dp-h780dp-420dpi")
+    fun thirtyYearTimelineMeasuresAndScrollsAtHighDensityAndLargeFont() {
+        val session = StreakSessionEntity(
+            id = 1, recoveryFocusId = "gaming", startZoneId = "UTC",
+            startEpochMillis = Instant.parse("1990-01-01T00:00:00Z").toEpochMilli(),
+            endEpochMillis = Instant.parse("2020-01-01T00:00:00Z").toEpochMilli()
+        )
+        compose.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(2.625f, 2f)) {
+                SteadfastTheme { JourneyTimelineChart(listOf(session), Modifier.requiredSize(300.dp, 230.dp)) }
+            }
+        }
+        compose.onNodeWithTag("journey_timeline").assertIsDisplayed()
+        val chartBounds = compose.onNodeWithTag("journey_timeline").getUnclippedBoundsInRoot()
+        listOf("Streak (days)", "Date / time · Swipe to explore history").forEach { label ->
+            val node = compose.onNodeWithText(label).assertIsDisplayed()
+            val bounds = node.getUnclippedBoundsInRoot()
+            assertTrue("Axis title clipped: $label $bounds / $chartBounds",
+                bounds.left >= chartBounds.left && bounds.right <= chartBounds.right &&
+                    bounds.top >= chartBounds.top && bounds.bottom <= chartBounds.bottom &&
+                    bounds.right > bounds.left && bounds.bottom > bounds.top)
+            val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+            node.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            assertTrue("Axis title has no text layout: $label", layouts.size == 1)
+            val layout = remeasureTextAtMeasuredBounds(layouts.single())
+            val glyphs = layout.layoutInput.text.indices.map(layout::getBoundingBox)
+            assertTrue("Axis title overflows: $label size=${layout.size}, glyphs=$glyphs",
+                !layout.hasVisualOverflow && glyphs.all {
+                    it.left >= 0f && it.top >= 0f && it.right <= layout.size.width && it.bottom <= layout.size.height
+                })
+            assertEquals(label, layout.layoutInput.text.text)
+        }
+        val plot = compose.onNode(hasScrollAction(), useUnmergedTree = true)
+        val range = plot.fetchSemanticsNode().config[SemanticsProperties.HorizontalScrollAxisRange]
+        assertTrue("Decades must retain a scrollable time axis", range.maxValue() > 0f)
+        assertTrue("Canvas must stay below the Compose pixel constraint limit", range.maxValue() <= 60_000f)
+        plot.performSemanticsAction(SemanticsActions.ScrollBy) { it(60_000f, 0f) }
+        compose.waitForIdle()
+        assertTrue("Long-history plot did not scroll", range.value() > 0f)
+        compose.onNodeWithText("Streak (days)").assertIsDisplayed()
     }
 
     @Test fun failedSettingsDateSaveKeepsTheDialogAndDraftForRetry() {

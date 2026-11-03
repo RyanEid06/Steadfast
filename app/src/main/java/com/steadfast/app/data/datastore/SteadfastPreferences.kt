@@ -33,7 +33,10 @@ data class UserPreferencesSnapshot(
     val newTestamentCurrent: ReadingLocation? = null,
     val appLockEnabled: Boolean = false,
     val shownMilestones: Set<String> = emptySet(),
-    val onboardingComplete: Boolean = false
+    val onboardingComplete: Boolean = false,
+    val bibleTestamentFilter: Int = 0,
+    val journeyTab: Int = 0,
+    val journalFilter: String = "ALL"
 )
 
 class SteadfastPreferences(context: Context, private val store: DataStore<Preferences> = context.dataStore) {
@@ -50,6 +53,36 @@ class SteadfastPreferences(context: Context, private val store: DataStore<Prefer
         val NT_CURRENT_CHAPTER = intPreferencesKey("nt_current_chapter")
         val SHOWN_MILESTONES = stringPreferencesKey("shown_milestones")
         val LAST_BACKGROUND_EPOCH = longPreferencesKey("last_background_epoch")
+        val BIBLE_FILTER = intPreferencesKey("bible_testament_filter")
+        val JOURNEY_TAB = intPreferencesKey("journey_tab")
+        val JOURNAL_FILTER = stringPreferencesKey("journal_filter")
+        val VERSE_DECK_USED = stringPreferencesKey("verse_deck_used")
+        val VERSE_DECK_LAST = stringPreferencesKey("verse_deck_last")
+    }
+
+    val bibleTestamentFilter: Flow<Int> = store.data.map { (it[Keys.BIBLE_FILTER] ?: 0).coerceIn(0, 2) }
+    val journeyTab: Flow<Int> = store.data.map { (it[Keys.JOURNEY_TAB] ?: 0).coerceIn(0, 2) }
+    val journalFilter: Flow<String> = store.data.map { it[Keys.JOURNAL_FILTER]?.takeIf(::validJournalFilter) ?: "ALL" }
+
+    suspend fun setBibleTestamentFilter(filter: Int) { require(filter in 0..2); store.edit { it[Keys.BIBLE_FILTER] = filter } }
+    suspend fun setJourneyTab(tab: Int) { require(tab in 0..2); store.edit { it[Keys.JOURNEY_TAB] = tab } }
+    suspend fun setJournalFilter(filter: String) { require(validJournalFilter(filter)); store.edit { it[Keys.JOURNAL_FILTER] = filter } }
+    private fun validJournalFilter(filter: String) = filter in setOf("ALL", "GENERAL", "URGE", "RESTART")
+
+    suspend fun nextVerseId(ids: List<String>, priority: Set<String>): String {
+        var selected: String? = null
+        // DataStore serializes draws across repositories and commits before exposing the selected card.
+        store.edit { prefs ->
+            val state = com.steadfast.app.data.repository.VerseDeckState(
+                prefs[Keys.VERSE_DECK_USED].orEmpty().split(',').filter { it.isNotBlank() }.toSet(),
+                prefs[Keys.VERSE_DECK_LAST]
+            )
+            val next = com.steadfast.app.data.repository.VerseDeck.draw(ids, priority, state)
+            prefs[Keys.VERSE_DECK_USED] = next.usedIds.joinToString(",")
+            prefs[Keys.VERSE_DECK_LAST] = requireNotNull(next.lastId)
+            selected = next.lastId
+        }
+        return requireNotNull(selected)
     }
 
     val isOnboardingComplete: Flow<Boolean> = store.data.map { prefs ->
@@ -107,7 +140,10 @@ class SteadfastPreferences(context: Context, private val store: DataStore<Prefer
             },
             appLockEnabled = prefs[Keys.APP_LOCK_ENABLED] ?: false,
             shownMilestones = prefs[Keys.SHOWN_MILESTONES].orEmpty().split(",").filter { it.isNotBlank() }.toSet(),
-            onboardingComplete = prefs[Keys.ONBOARDING_COMPLETE] ?: false
+            onboardingComplete = prefs[Keys.ONBOARDING_COMPLETE] ?: false,
+            bibleTestamentFilter = (prefs[Keys.BIBLE_FILTER] ?: 0).coerceIn(0, 2),
+            journeyTab = (prefs[Keys.JOURNEY_TAB] ?: 0).coerceIn(0, 2),
+            journalFilter = prefs[Keys.JOURNAL_FILTER]?.takeIf(::validJournalFilter) ?: "ALL"
         )
     }
 
@@ -120,6 +156,9 @@ class SteadfastPreferences(context: Context, private val store: DataStore<Prefer
             prefs[Keys.APP_LOCK_ENABLED] = snapshot.appLockEnabled
             prefs[Keys.ONBOARDING_COMPLETE] = snapshot.onboardingComplete
             prefs[Keys.SHOWN_MILESTONES] = snapshot.shownMilestones.joinToString(",")
+            prefs[Keys.BIBLE_FILTER] = snapshot.bibleTestamentFilter
+            prefs[Keys.JOURNEY_TAB] = snapshot.journeyTab
+            prefs[Keys.JOURNAL_FILTER] = snapshot.journalFilter
             if (snapshot.oldTestamentCurrent == null) {
                 prefs.remove(Keys.OT_CURRENT_BOOK_ID)
                 prefs.remove(Keys.OT_CURRENT_CHAPTER)
@@ -144,6 +183,9 @@ class SteadfastPreferences(context: Context, private val store: DataStore<Prefer
             oldTestamentCurrent = snapshot.oldTestamentCurrent ?: existing.oldTestamentCurrent,
             newTestamentCurrent = snapshot.newTestamentCurrent ?: existing.newTestamentCurrent,
             shownMilestones = snapshot.shownMilestones.ifEmpty { existing.shownMilestones },
+            bibleTestamentFilter = existing.bibleTestamentFilter,
+            journeyTab = existing.journeyTab,
+            journalFilter = existing.journalFilter,
             onboardingComplete = false
         ))
     }

@@ -3,7 +3,6 @@ package com.steadfast.app.ui.journey
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -67,9 +66,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -109,17 +105,25 @@ fun JourneyScreen(
     onSettingsClicked: () -> Unit,
     modifier: Modifier = Modifier,
     initialJournalContext: String? = null,
+    initialSelectedTab: Int = 0,
+    onSelectedTabChanged: (Int) -> Unit = {},
+    initialJournalFilter: String = "ALL",
+    onJournalFilterChanged: (String) -> Unit = {},
     onStartAgainValidated: (suspend (Long, String?) -> Result<Unit>)? = null,
     focuses: List<RecoveryFocus> = emptyList(),
     currentStreakDays: Long? = null,
     onSaveJournalEntryValidated: (suspend (Long?, String, String?) -> Result<Unit>)? = null
 ) {
-    var selectedTab by rememberSaveable(initialJournalContext) { mutableIntStateOf(if (initialJournalContext != null) 2 else 0) }
+    var selectedTab by rememberSaveable(initialJournalContext) { mutableIntStateOf(if (initialJournalContext != null) 2 else initialSelectedTab) }
     val draft = androidx.lifecycle.viewmodel.compose.viewModel<JourneyDraftModel>()
     androidx.compose.runtime.LaunchedEffect(initialJournalContext) {
         if (!draft.initialized) {
             draft.initialized = true
-            if (initialJournalContext != null) draft.openNew(initialJournalContext)
+            draft.filter = initialJournalFilter
+            if (initialJournalContext != null) {
+                draft.openNew(initialJournalContext)
+                onSelectedTabChanged(2)
+            }
         }
     }
     var showStartAgainDialog by draft::showRestart
@@ -192,7 +196,7 @@ fun JourneyScreen(
                             .background(
                                 if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
                             )
-                            .selectable(selected = isSelected, role = Role.Tab, onClick = { selectedTab = index })
+                            .selectable(selected = isSelected, role = Role.Tab, onClick = { selectedTab = index; onSelectedTabChanged(index) })
                             .testTag("journey_tab_$title"),
                         contentAlignment = Alignment.Center
                     ) {
@@ -226,7 +230,7 @@ fun JourneyScreen(
                 2 -> JourneyJournalTab(
                     entries = journalEntries,
                     searchQuery = draft.query, selectedFilter = draft.filter,
-                    onQueryChanged = { draft.query = it }, onFilterChanged = { draft.filter = it },
+                    onQueryChanged = { draft.query = it }, onFilterChanged = { draft.filter = it; onJournalFilterChanged(it) },
                     onAddClick = { draft.openNew() },
                     onEditClick = { draft.openEdit(it) },
                     onDeleteClick = { entryToDelete = it }
@@ -394,11 +398,11 @@ private fun JourneyOverviewTab(
                             )
                         }
                         Spacer(modifier = Modifier.height(10.dp))
-                        StreakHistoryBarChart(
+                        JourneyTimelineChart(
                             sessions = allSessions,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(80.dp)
+                                .height(190.dp)
                         )
                     }
                 }
@@ -613,11 +617,11 @@ private fun JourneyHistoryTab(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     if (allSessions.isNotEmpty()) {
-                        StreakHistoryBarChart(
+                        JourneyTimelineChart(
                             sessions = allSessions,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(130.dp)
+                                .height(230.dp)
                         )
                     } else {
                         Text(
@@ -693,76 +697,8 @@ private fun JourneyHistoryTab(
     }
 }
 
-@Composable
-private fun StreakHistoryBarChart(
-    sessions: List<StreakSessionEntity>,
-    modifier: Modifier = Modifier
-) {
-    val barColor = MaterialTheme.colorScheme.primary
-    val activeColor = MaterialTheme.colorScheme.onSurfaceVariant
-
-    val now = com.steadfast.app.core.time.rememberForegroundTimeMillis(
-        enabled = sessions.any { it.endEpochMillis == null },
-        intervalMillis = 60_000L
-    )
-    val sessionDurations = remember(sessions, now / 60_000L) {
-        sessions.take(10).reversed().map { session ->
-            val end = session.endEpochMillis ?: now
-            session to streakElapsedMillis(session.startEpochMillis, end)
-        }
-    }
-
-    val maxDuration = remember(sessionDurations) {
-        sessionDurations.maxOfOrNull { it.second } ?: 0L
-    }
-
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM d, yyyy") }
-    val chartSummary = sessionDurations.joinToString("; ") { (session, millis) ->
-        val zone = runCatching { ZoneId.of(session.startZoneId) }.getOrElse { ZoneId.systemDefault() }
-        val date = Instant.ofEpochMilli(session.startEpochMillis).atZone(zone).format(dateFormatter)
-        "Session ${session.id}, $date, ${streakElapsedDurationLabel(millis)} elapsed${if (session.endEpochMillis == null) ", active" else ", archived"}"
-    }
-    Column(modifier = modifier) {
-        Canvas(modifier = Modifier.fillMaxWidth().weight(1f).semantics { contentDescription = "Recent streaks: $chartSummary" }) {
-            val count = sessionDurations.size
-            if (count == 0) return@Canvas
-            val barWidth = (size.width / (count * 1.6f)).coerceIn(12f, 36f)
-            val space = (size.width - (barWidth * count)) / (count + 1)
-
-            sessionDurations.forEachIndexed { idx, (session, millis) ->
-                val barHeight = size.height * streakBarHeightRatio(millis, maxDuration)
-                val left = space + idx * (barWidth + space)
-                val top = size.height - barHeight
-                drawRoundRect(
-                    color = if (session.endEpochMillis == null) barColor else activeColor.copy(alpha = 0.7f),
-                    topLeft = Offset(left, top),
-                    size = Size(barWidth, barHeight),
-                    cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
-                )
-            }
-        }
-        if (sessionDurations.isNotEmpty()) {
-            Row(modifier = Modifier.fillMaxWidth().height(20.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-                sessionDurations.forEach { (_, millis) ->
-                    Text(
-                        streakCompactDurationLabel(millis),
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
-}
-
 internal fun streakElapsedMillis(startEpochMillis: Long, endEpochMillis: Long): Long =
     (endEpochMillis - startEpochMillis).coerceAtLeast(0L)
-
-internal fun streakBarHeightRatio(durationMillis: Long, maximumDurationMillis: Long): Float =
-    if (maximumDurationMillis <= 0L) 0f else (durationMillis.toDouble() / maximumDurationMillis).toFloat().coerceIn(0f, 1f)
 
 internal fun streakElapsedDurationLabel(durationMillis: Long): String {
     val millis = durationMillis.coerceAtLeast(0L)
@@ -774,16 +710,6 @@ internal fun streakElapsedDurationLabel(durationMillis: Long): String {
         millis < 3_600_000 -> "$minutes ${if (minutes == 1L) "minute" else "minutes"}"
         millis < 86_400_000 -> "$hours ${if (hours == 1L) "hour" else "hours"}"
         else -> "$days ${if (days == 1L) "day" else "days"}"
-    }
-}
-
-internal fun streakCompactDurationLabel(durationMillis: Long): String {
-    val millis = durationMillis.coerceAtLeast(0L)
-    return when {
-        millis < 60_000 -> "${millis / 1_000}s"
-        millis < 3_600_000 -> "${millis / 60_000}m"
-        millis < 86_400_000 -> "${millis / 3_600_000}h"
-        else -> "${millis / 86_400_000}d"
     }
 }
 

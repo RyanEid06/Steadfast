@@ -19,7 +19,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-internal data class WidgetContent(val streak: String, val focus: String, val milestone: String)
+internal data class WidgetContent(val streak: String, val focus: String, val milestone: String, val currentDays: Long? = null)
+
+internal fun createWidgetViews(context: Context, content: WidgetContent, pendingIntent: PendingIntent): RemoteViews =
+    RemoteViews(context.packageName, R.layout.widget_steadfast).apply {
+        setImageViewBitmap(R.id.widget_scene, renderWidgetScene(content.currentDays))
+        setTextViewText(R.id.widget_streak_days, content.streak)
+        setTextViewText(R.id.widget_focus_label, content.focus)
+        setTextViewText(R.id.widget_milestone_label, content.milestone)
+        setOnClickPendingIntent(R.id.widget_root, pendingIntent)
+    }
 
 fun requestWidgetRefresh(context: Context) {
     try {
@@ -49,7 +58,8 @@ internal suspend fun loadWidgetContent(context: Context): WidgetContent {
     return WidgetContent(
         "${duration.totalDays} days",
         "A stronger you. A closer walk.",
-        next?.let { "Next: ${it.title}" } ?: "All Milestones Achieved"
+        next?.let { "Next: ${it.title}" } ?: "All Milestones Achieved",
+        duration.totalDays
     )
 }
 
@@ -63,13 +73,8 @@ class SteadfastWidgetProvider : AppWidgetProvider() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val publish: (WidgetContent) -> Unit = { content ->
+                    val views = createWidgetViews(context, content, pendingIntent)
                     for (id in appWidgetIds) {
-                        val views = RemoteViews(context.packageName, R.layout.widget_steadfast).apply {
-                            setTextViewText(R.id.widget_streak_days, content.streak)
-                            setTextViewText(R.id.widget_focus_label, content.focus)
-                            setTextViewText(R.id.widget_milestone_label, content.milestone)
-                            setOnClickPendingIntent(R.id.widget_root, pendingIntent)
-                        }
                         appWidgetManager.updateAppWidget(id, views)
                     }
                 }

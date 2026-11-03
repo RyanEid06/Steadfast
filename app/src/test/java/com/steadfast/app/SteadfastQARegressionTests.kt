@@ -250,29 +250,23 @@ class SteadfastQARegressionTests {
             bibleDao = MockBibleDao(emptyList())
         )
 
-        val phil = repository.getAllCatalogVerses().find { it.reference == "Philippians 4:13" }
+        val phil = repository.getAllCatalogVerses().find { it.reference == "Philippians 4:11-13" }
         assertNotNull(phil)
-        assertEquals("I can do all things through Christ, who strengthens me.", phil!!.text)
+        assertEquals("Not that I speak because of lack, for I have learned in whatever state I am, to be content in it. I know how to be humbled, and I also know how to abound. In any and all circumstances I have learned the secret both to be filled and to be hungry, both to abound and to be in need. I can do all things through Christ who strengthens me.", phil!!.text)
         assertEquals("WEB", phil.translation)
 
-        val james47 = repository.getAllCatalogVerses().find { it.reference == "James 4:7" }
+        val james47 = repository.getAllCatalogVerses().find { it.reference == "James 4:7-10" }
         assertNotNull(james47)
-        assertEquals("Be subject therefore to God. Resist the devil, and he will flee from you.", james47!!.text)
+        assertEquals("Be subject therefore to God. Resist the devil, and he will flee from you. Draw near to God, and he will draw near to you. Cleanse your hands, you sinners. Purify your hearts, you double-minded. Lament, mourn, and weep. Let your laughter be turned to mourning and your joy to gloom. Humble yourselves in the sight of the Lord, and he will exalt you.", james47!!.text)
 
-        val cor1013 = repository.getAllCatalogVerses().find { it.reference == "1 Corinthians 10:13" }
+        val cor1013 = repository.getAllCatalogVerses().find { it.reference == "1 Corinthians 10:12-13" }
         assertNotNull(cor1013)
-        assertTrue(cor1013!!.text!!.startsWith("No temptation has taken you except what is common to man."))
+        assertEquals("Therefore let him who thinks he stands be careful that he doesn’t fall. No temptation has taken you except what is common to man. God is faithful, who will not allow you to be tempted above what you are able, but will with the temptation also make the way of escape, that you may be able to endure it.", cor1013!!.text)
 
-        // Verify that unverified entries do NOT fabricate text or display the generic fallback quote
-        val unverifiedVerse = repository.getAllCatalogVerses().find { it.reference == "Hebrews 2:18" }
-        if (unverifiedVerse != null) {
-            // Text MUST be null, NEVER the generic combined quote
-            assertNull(unverifiedVerse.text)
-            assertFalse(
-                "Must never contain combined fallback quote",
-                unverifiedVerse.text?.contains("Stand firm, and you will win life") == true
-            )
-        }
+        val hebrews = repository.getAllCatalogVerses().single { it.reference == "Hebrews 2:17-18" }
+        assertEquals("Therefore he was obligated in all things to be made like his brothers, that he might become a merciful and faithful high priest in things pertaining to God, to make atonement for the sins of the people. For in that he himself has suffered being tempted, he is able to help those who are tempted.", hebrews.text)
+        assertEquals("WEB", hebrews.translation)
+        assertTrue(repository.getAllCatalogVerses().all { !it.text.isNullOrBlank() && it.translation == "WEB" })
     }
 
     @Test
@@ -288,7 +282,7 @@ class SteadfastQARegressionTests {
         val verse = repository.getNextVerse()
         assertNotNull(verse)
         // Verses belonging to Philippians 4 should be prioritized
-        assertTrue(verse.reference == "Philippians 4:13" || verse.reference == "Philippians 4:6-7")
+        assertEquals("Philippians", verse.bookName)
         assertEquals(4, verse.chapter)
         assertTrue(verse.isFromCompletedChapter)
     }
@@ -304,10 +298,10 @@ class SteadfastQARegressionTests {
         val first = repository.getNextVerse()
         seen.add(first.reference)
 
-        // Fetch multiple verses; recent verses should not immediately repeat
+        // Every card remains unused until this catalog cycle is exhausted.
         for (i in 1..5) {
             val next = repository.getNextVerse()
-            assertFalse("Verse repeated too quickly in anti-repeat window", repository.getRecentHistory().dropLast(1).takeLast(1).contains(next.reference))
+            assertTrue("Verse repeated before the catalog cycle was exhausted", seen.add(next.reference))
         }
     }
 

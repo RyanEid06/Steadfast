@@ -1,6 +1,9 @@
 package com.steadfast.app
 
 import android.content.Context
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.Composable
@@ -24,11 +27,17 @@ import androidx.compose.ui.test.printToLog
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.steadfast.app.data.db.SteadfastDatabase
+import com.steadfast.app.data.datastore.SteadfastPreferences
 import com.steadfast.app.data.model.StreakSessionEntity
 import com.steadfast.app.data.repository.VerseRepository
 import com.steadfast.app.data.seed.AssetSeedLoader
 import com.steadfast.app.ui.theme.SteadfastTheme
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -43,9 +52,15 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class AdditionalLayoutRiskTest {
     private var databaseToClose: com.steadfast.app.data.db.SteadfastDatabase? = null
+    private var preferencesJob: Job? = null
+    private var preferencesFile: java.io.File? = null
     // Dispose the composition and its query coroutines before closing their Room fixture.
     @get:Rule(order = 0) val databaseCleanup = object : org.junit.rules.ExternalResource() {
-        override fun after() { databaseToClose?.close() }
+        override fun after() {
+            databaseToClose?.close()
+            runBlocking { preferencesJob?.cancelAndJoin() }
+            preferencesFile?.delete()
+        }
     }
     @get:Rule(order = 1) val compose = createComposeRule()
 
@@ -56,15 +71,30 @@ class AdditionalLayoutRiskTest {
         ).allowMainThreadQueries().build().also { databaseToClose = it }
         com.steadfast.app.core.design.ReducedMotionPolicy.testReducedMotionOverride = true
         try {
-            val loader = AssetSeedLoader(context) { name ->
-                if (name == "verse_reference_catalog_starter.json") {
-                    """{"themes":{"temptation":["1 Corinthians 10:13"],"strength":["1 Corinthians 10:13"],"love":["1 Corinthians 10:13"],"forgiveness":["1 Corinthians 10:13"],"self_control":["1 Corinthians 10:13"],"peace":["1 Corinthians 10:13"],"perseverance":["1 Corinthians 10:13"],"renewal":["1 Corinthians 10:13"]}}"""
-                } else {
-                    context.assets.open(name).bufferedReader().use { it.readText() }
+            val loader = AssetSeedLoader(context)
+            val catalog = loader.loadScriptureCatalog()
+            val target = catalog.single { it.reference == "1 Corinthians 10:12-13" }
+            val job = SupervisorJob().also { preferencesJob = it }
+            val file = java.io.File(context.filesDir, "long-scripture-${java.util.UUID.randomUUID()}.preferences_pb")
+                .also { preferencesFile = it }
+            val store = PreferenceDataStoreFactory.create(
+                scope = CoroutineScope(job + Dispatchers.IO), produceFile = { file }
+            )
+            runBlocking {
+                store.edit {
+                    it[stringPreferencesKey("verse_deck_used")] = catalog.filter { entry -> entry.id != target.id }.joinToString(",") { entry -> entry.id }
+                    it[stringPreferencesKey("verse_deck_last")] = catalog.first { entry -> entry.id != target.id }.id
                 }
             }
-            val repository = VerseRepository(loader, database.bibleDao())
-            val loadedVerse = runBlocking { repository.getNextVerse() }
+            val firstFrame = kotlinx.coroutines.CompletableDeferred<Unit>()
+            val dao = object : com.steadfast.app.data.db.BibleDao by database.bibleDao() {
+                override suspend fun getAllCompletedSync(): List<com.steadfast.app.data.model.BibleChapterCompletionEntity> {
+                    firstFrame.await()
+                    return database.bibleDao().getAllCompletedSync()
+                }
+            }
+            val repository = VerseRepository(loader, dao, SteadfastPreferences(context, store))
+            val loadedVerse = repository.getAllCatalogVerses().single { it.reference == target.reference }
             val callbacks = mutableSetOf<String>()
             compose.setContent {
                 CompactLargeFontWindow {
@@ -80,10 +110,12 @@ class AdditionalLayoutRiskTest {
                 }
             }
 
-            val metadata = "1 Corinthians 10:13 · WEB"
-            val scripture = "“No temptation has taken you except what is common to man. God is faithful, who will not allow you to be tempted above what you are able, but will with the temptation also make the way of escape, that you may be able to endure it.”"
+            compose.onNodeWithText("Loading Scripture…").assertIsDisplayed()
+            compose.runOnIdle { firstFrame.complete(Unit) }
+            val metadata = "1 Corinthians 10:12-13 · WEB"
+            val scripture = "“Therefore let him who thinks he stands be careful that he doesn’t fall. No temptation has taken you except what is common to man. God is faithful, who will not allow you to be tempted above what you are able, but will with the temptation also make the way of escape, that you may be able to endure it.”"
             assertTrue("Deterministic verse fixture was not loaded: $loadedVerse",
-                loadedVerse.reference == "1 Corinthians 10:13" && loadedVerse.translation == "WEB")
+                loadedVerse.reference == "1 Corinthians 10:12-13" && loadedVerse.translation == "WEB")
             val metadataLoaded = runCatching {
                 compose.waitUntil(5_000) { compose.onAllNodesWithText(metadata).fetchSemanticsNodes().isNotEmpty() }
             }.isSuccess

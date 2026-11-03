@@ -6,6 +6,7 @@ plugins {
 
 android {
   val optimizedSmoke = providers.gradleProperty("optimizedSmoke").orNull == "true"
+  val privateUpdate = providers.gradleProperty("privateUpdate").orNull == "true"
   if (optimizedSmoke) {
     testBuildType = "release"
     sourceSets.getByName("androidTest").java.setSrcDirs(listOf("src/optimizedSmoke/java"))
@@ -19,8 +20,8 @@ android {
     applicationId = "com.steadfast.app"
     minSdk = 29
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0"
+    versionCode = 2
+    versionName = "1.1.0"
 
     testInstrumentationRunner = if (optimizedSmoke) "com.steadfast.app.smoke.OptimizedSmokeRunner" else "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -49,7 +50,7 @@ android {
       isMinifyEnabled = true
       isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      signingConfig = if (optimizedSmoke) signingConfigs.getByName("debug") else signingConfigs.findByName("release")
+      signingConfig = if (optimizedSmoke || privateUpdate) signingConfigs.getByName("debug") else signingConfigs.findByName("release")
       if (optimizedSmoke) testProguardFiles("optimized-smoke-test-rules.pro")
     }
   }
@@ -61,7 +62,16 @@ android {
     compose = true
     buildConfig = true
   }
-  testOptions { unitTests { isIncludeAndroidResources = true } }
+  testOptions {
+    unitTests {
+      isIncludeAndroidResources = true
+      all {
+        // Isolate Robolectric native-rendering state between classes and keep memory bounded.
+        it.forkEvery = 1
+        it.maxParallelForks = 1
+      }
+    }
+  }
   dependenciesInfo {
     includeInApk = false
     includeInBundle = true

@@ -44,7 +44,7 @@ The layout adapts to smaller screens while keeping the full Scripture and primar
 Root sections:
 
 - Overview: current + longest streak, compact history preview, next milestone, actions to motivation/milestones/start again.
-- History: streak chart and archived streak cards.
+- History: a chronological XY line chart and archived streak cards. Time is proportional horizontally; elapsed duration grows vertically and drops at resets. Longer histories scroll horizontally, with readable axes and an accessible session summary.
 - Journal: searchable/filterable list with add/edit/delete note controls of at least 48dp. **Journal visual composition follows Style 2**, while retaining the global Style 3 palette. The Struggling Write Note route selects Journal and opens its URGE composer directly.
 
 Do not flash loading states when local data is already available. Use Room Flow/state and stable keys.
@@ -78,7 +78,11 @@ Book detail (visual layout follows Style 3):
 
 ## I’m Struggling
 
-Full-screen, calm, low-clutter intervention surface. Background may use a subdued cross/mountain image. Verse/reference occupies the focus. Actions are secondary and stacked.
+Full-screen, calm, low-clutter intervention surface. Background may use a subdued cross/mountain image. A complete verified WEB passage and exact reference occupy the focus. Actions are secondary and stacked. The surface can scroll so the longest passage, its final line and every action remain reachable in ordinary portrait and compact/large-font windows.
+
+## Home-screen widget
+
+Static navy/gold landscape and cross artwork, a large cream elapsed-day count and a neutral supporting line. Current-streak growth gradually brightens the scene; a restart, unavailable progress or pending restore returns it to dim. Preserve the provider identity, existing app-open action and focus-neutral privacy policy. Fit the count at scaled fonts; hide or ellipsize secondary text before compromising the main count.
 
 ## Theme behavior
 

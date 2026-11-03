@@ -1,0 +1,7 @@
+# Source-evidence hashes and reproducible catalog output use canonical LF bytes.
+/data/scripture_catalog.json text eol=lf
+/data/scripture_curation.tsv text eol=lf
+/data/scripture_source/*.xml text eol=lf
+/data/scripture_source/*.json text eol=lf
+/app/src/main/assets/scripture_catalog.json text eol=lf
+/app/src/main/assets/scripture_verse_counts.json text eol=lf

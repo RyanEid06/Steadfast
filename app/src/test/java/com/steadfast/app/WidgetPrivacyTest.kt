@@ -13,6 +13,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -35,12 +36,49 @@ class WidgetPrivacyTest {
                     val content = loadWidgetContent(context)
                     assertEquals("Widget must never disclose recovery focus ${focus.id}", "A stronger you. A closer walk.", content.focus)
                     assertEquals("0 days", content.streak)
+                    assertEquals(0L, content.currentDays)
                 }
             }
         } finally {
             db.streakDao().clearAll()
             history.forEach { db.streakDao().insertSession(it) }
             prefs.replaceUserSettings(original)
+        }
+    }
+
+    @Test fun restartClearsTheGlowAndPendingRestoreNeverPublishesProgress() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = SteadfastDatabase.getInstance(context)
+        val history = db.streakDao().getAllSessionsSync()
+        val journal = File(context.noBackupFilesDir, "restore-recovery.enc.new")
+        check(!journal.exists())
+        try {
+            db.streakDao().clearAll()
+            db.streakDao().insertSession(StreakSessionEntity(
+                recoveryFocusId = "alcohol", startEpochMillis = System.currentTimeMillis() - 90L * 86_400_000,
+                startZoneId = "UTC"
+            ))
+            assertEquals(90L, loadWidgetContent(context).currentDays)
+            journal.parentFile!!.mkdirs()
+            journal.writeText("pending restore")
+            val gated = loadWidgetContent(context)
+            assertEquals("Open Steadfast", gated.streak)
+            assertEquals("Restore in progress", gated.focus)
+            assertNull(gated.currentDays)
+            assertTrue(journal.delete())
+            db.streakDao().clearAll()
+            assertNull(loadWidgetContent(context).currentDays)
+            db.streakDao().insertSession(StreakSessionEntity(
+                recoveryFocusId = "alcohol", startEpochMillis = System.currentTimeMillis() - 60_000,
+                startZoneId = "UTC"
+            ))
+            val restarted = loadWidgetContent(context)
+            assertEquals("0 days", restarted.streak)
+            assertEquals(0L, restarted.currentDays)
+        } finally {
+            journal.delete()
+            db.streakDao().clearAll()
+            history.forEach { db.streakDao().insertSession(it) }
         }
     }
 }

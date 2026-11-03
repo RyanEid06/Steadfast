@@ -41,10 +41,12 @@ import javax.crypto.spec.SecretKeySpec;
 public class OptimizedSmokeRunner extends Instrumentation {
     private Activity currentActivity;
     private String mode;
+    private Bundle upgradeArguments;
     private String phase = "startup";
     @Override public void onCreate(Bundle arguments) {
         super.onCreate(arguments);
         mode = arguments == null ? null : arguments.getString("mode");
+        upgradeArguments = arguments;
         start();
     }
     @Override public void callActivityOnCreate(Activity activity, Bundle state) {
@@ -55,6 +57,24 @@ public class OptimizedSmokeRunner extends Instrumentation {
         Bundle result = new Bundle();
         try {
             phase = "mode: " + (mode == null ? "entry" : mode);
+            if ("storageDigest".equals(mode)) {
+                JSONObject digests = new JSONObject();
+                File database = getTargetContext().getDatabasePath("steadfast.db");
+                for (String suffix : new String[]{"", "-wal", "-shm"}) {
+                    File file = new File(database.getPath() + suffix);
+                    digests.put("steadfast.db" + suffix, file.isFile() ? sha256(java.nio.file.Files.readAllBytes(file.toPath())) : "absent");
+                }
+                File settings = new File(getTargetContext().getFilesDir(), "datastore/steadfast_settings.preferences_pb");
+                digests.put("settings", settings.isFile() ? sha256(java.nio.file.Files.readAllBytes(settings.toPath())) : "absent");
+                result.putString("stream", "OK storageDigest user=" + (getTargetContext().getApplicationInfo().uid / 100000) + " " + digests + "\n");
+                finish(Activity.RESULT_OK, result);
+                return;
+            }
+            if (mode != null && mode.startsWith("upgrade")) {
+                result.putString("stream", new UpgradeRegression(this, upgradeArguments).run(mode));
+                finish(Activity.RESULT_OK, result);
+                return;
+            }
             if ("widget".equals(mode)) {
                 launch();
                 awaitDashboard();

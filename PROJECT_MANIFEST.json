@@ -1,11 +1,11 @@
 {
   "project": "Steadfast Android",
   "specVersion": "1.1-hybrid-design-frozen",
-  "updated": "2026-11-02",
-  "implementationStatus": "implemented; final ordinary, optimized backup, native regression, breathing, fresh-entry, and ordinary process-restart acceptance passed; selected API 37 compact/theme/RTL, SAF preview, widget, icon, and catalog emulator checks passed; physical-device acceptance remains pending",
+  "updated": "2026-11-03",
+  "implementationStatus": "V1.1 local host/native regression, build, install-over upgrade and data-preservation verification complete; owner-reported physical acceptance passed",
   "namespace": "com.steadfast.app",
-  "versionName": "1.0",
-  "versionCode": 1,
+  "versionName": "1.1.0",
+  "versionCode": 2,
   "minSdk": 29,
   "targetSdk": 36,
   "primaryDesign": "docs/DESIGN_FREEZE.md",
@@ -18,5 +18,7 @@
     "arm64-v8a"
   ],
   "backupPayloadSchema": 2,
-  "backupEnvelope": "STDF_V2"
+  "backupEnvelope": "STDF_V2",
+  "scripturePassageCount": 500,
+  "roomSchemaVersion": 1
 }

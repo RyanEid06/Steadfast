@@ -67,9 +67,11 @@ fun BibleScreen(
     readingGoal: Int,
     onBookClicked: (Int) -> Unit,
     onSettingsClicked: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    initialSelectedFilter: Int = 0,
+    onSelectedFilterChanged: (Int) -> Unit = {}
 ) {
-    var selectedFilter by rememberSaveable { mutableIntStateOf(0) } // 0 = All, 1 = OT, 2 = NT
+    var selectedFilter by rememberSaveable { mutableIntStateOf(initialSelectedFilter) } // 0 = All, 1 = OT, 2 = NT
 
     val filteredBooks = remember(books, selectedFilter) {
         when (selectedFilter) {
@@ -254,7 +256,7 @@ fun BibleScreen(
                         listOf("All (66)", "Old Testament (39)", "New Testament (27)").forEachIndexed { index, label ->
                             FilterChip(
                                 selected = selectedFilter == index,
-                                onClick = { selectedFilter = index },
+                                onClick = { selectedFilter = index; onSelectedFilterChanged(index) },
                                 label = { Text(label, style = MaterialTheme.typography.labelSmall) },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = SteadfastGold.copy(alpha = 0.2f),

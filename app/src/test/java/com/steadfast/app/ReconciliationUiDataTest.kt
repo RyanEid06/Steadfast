@@ -25,10 +25,12 @@ class ReconciliationUiDataTest {
             val verses = VerseRepository(AssetSeedLoader(context), db.bibleDao()).getAllCatalogVerses()
             val james = verses.first { it.reference == "James 1:12" }
             assertEquals("WEB", james.translation)
-            assertEquals("Blessed is the man who endures temptation, for when he has been approved, he will receive the crown of life, which the Lord promised to those who love him.", james.text)
-            val unknown = verses.first { it.reference == "Matthew 26:41" }
-            assertNull(unknown.text)
-            assertNull(unknown.translation)
+            assertEquals("Blessed is a person who endures temptation, for when he has been approved, he will receive the crown of life which the Lord promised to those who love him.", james.text)
+            val matthew = verses.first { it.reference == "Matthew 26:41" }
+            assertEquals("Watch and pray, that you don’t enter into temptation. The spirit indeed is willing, but the flesh is weak.”", matthew.text)
+            assertEquals("WEB", matthew.translation)
+            assertEquals(500, verses.size)
+            assertTrue(verses.all { !it.text.isNullOrBlank() && it.translation == "WEB" })
         } finally { db.close() }
     }
 
@@ -40,6 +42,7 @@ class ReconciliationUiDataTest {
                 val verse = repository.getRandomDailyEncouragement()
                 assertEquals("WEB", verse.translation)
                 assertFalse(verse.text.isNullOrBlank())
+                assertTrue("Fixed Dashboard encouragement must remain compact", verse.text!!.length <= 220)
             }
         } finally { db.close() }
     }

@@ -55,6 +55,20 @@ data class VerseReferenceCatalog(
 )
 
 @JsonClass(generateAdapter = true)
+data class ScriptureEntry(
+    val id: String,
+    val bookId: Int,
+    val book: String,
+    val chapter: Int,
+    val verseStart: Int,
+    val verseEnd: Int,
+    val reference: String,
+    val text: String,
+    val testament: String,
+    val tags: List<String>
+)
+
+@JsonClass(generateAdapter = true)
 data class ScaleComparison(
     val id: String,
     val thresholdDays: Int,

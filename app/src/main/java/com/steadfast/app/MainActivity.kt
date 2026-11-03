@@ -148,7 +148,7 @@ class MainActivity : FragmentActivity() {
         journalRepository = JournalRepository(database.journalDao())
         steadfastRepository = SteadfastRepository(database, journalRepository, preferences)
         bibleRepository = BibleRepository(database.bibleDao(), seedLoader, preferences)
-        verseRepository = VerseRepository(seedLoader, database.bibleDao())
+        verseRepository = VerseRepository(seedLoader, database.bibleDao(), preferences)
         milestoneRepository = MilestoneRepository(seedLoader, preferences)
         backupManager = BackupManager(applicationContext, database, preferences)
         lockSession = ViewModelProvider(this)[AppLockSession::class.java]
@@ -492,6 +492,9 @@ fun MainAppContent(
     val otReading by bibleRepository.otCurrentReading.collectAsState(initial = initialPreferences.oldTestamentCurrent)
     val ntReading by bibleRepository.ntCurrentReading.collectAsState(initial = initialPreferences.newTestamentCurrent)
     val readingGoal by bibleRepository.readingGoalMinimum.collectAsState(initial = initialPreferences.readingGoalMinimum)
+    val bibleFilter by preferences.bibleTestamentFilter.collectAsState(initial = initialPreferences.bibleTestamentFilter)
+    val journeyTab by preferences.journeyTab.collectAsState(initial = initialPreferences.journeyTab)
+    val journalFilter by preferences.journalFilter.collectAsState(initial = initialPreferences.journalFilter)
     val currentFocusId by preferences.recoveryFocusId.collectAsState(initial = initialPreferences.recoveryFocusId)
 
     val focuses = remember { seedLoader.loadRecoveryFocuses() }
@@ -675,6 +678,10 @@ fun MainAppContent(
                             }
                         },
                         initialJournalContext = journeyEntry.arguments?.getString("journalContext"),
+                        initialSelectedTab = journeyTab,
+                        onSelectedTabChanged = { scope.launch { preferences.setJourneyTab(it) } },
+                        initialJournalFilter = journalFilter,
+                        onJournalFilterChanged = { scope.launch { preferences.setJournalFilter(it) } },
                         activeSession = activeSession,
                         allSessions = allSessions,
                         archivedSessions = archivedSessions,
@@ -739,6 +746,8 @@ fun MainAppContent(
                         otReading = otReading,
                         ntReading = ntReading,
                         readingGoal = readingGoal,
+                        initialSelectedFilter = bibleFilter,
+                        onSelectedFilterChanged = { scope.launch { preferences.setBibleTestamentFilter(it) } },
                         onBookClicked = { bookId ->
                             navController.navigate(Screen.BookDetail.createRoute(bookId))
                         },

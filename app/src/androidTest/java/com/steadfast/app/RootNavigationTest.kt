@@ -24,7 +24,7 @@ class RootNavigationTest {
             ActivityScenario.launch(MainActivity::class.java).use {
                 awaitDashboard()
                 compose.onNodeWithTag("dashboard_struggling_button").performClick()
-                compose.onNodeWithTag("struggling_write_note_button").performClick()
+                compose.onNodeWithTag("struggling_write_note_button").performScrollTo().performClick()
                 compose.onNodeWithText("New Journal Entry").assertExists()
                 compose.onNodeWithTag("journal_context_URGE").assertIsSelected()
                 compose.onNodeWithText("Cancel").performClick()
